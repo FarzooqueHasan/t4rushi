@@ -1,0 +1,492 @@
+/* --------------------------------------------------------------------------
+   Tarushi Birthday Site — 3D Motion Sequence
+   Flat background #05060B, single accent #FF8A3D
+   -------------------------------------------------------------------------- */
+
+:root {
+  --bg-primary: #05060B;
+  --accent: #FF8A3D;
+  --text-primary: #F4F1EA;
+
+  /* Prank Layer Isolated Palette */
+  --prank-bg: #FFD1E8;
+  --prank-accent: #FF5C8A;
+  --prank-ink: #2B1420;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fixed WebGL Canvas for 3D Camera Rig */
+#webgl-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  z-index: 1;
+  pointer-events: none;
+  display: block;
+}
+
+/* Scroll Container & 8 Empty Anchor Sections */
+#scroll-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+}
+
+.chapter-section {
+  width: 100%;
+  height: 100svh;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Part 1 — The Prank Layer (Full Viewport Overlay)
+   -------------------------------------------------------------------------- */
+.prank-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  z-index: 1000;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.prank-content {
+  width: 100%;
+  height: 100%;
+  background-color: var(--prank-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding-top: calc(1.5rem + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+  transition: filter 0.4s ease;
+}
+
+.prank-content.desaturated {
+  filter: grayscale(100%);
+}
+
+.prank-content.hidden {
+  display: none !important;
+}
+
+/* Mascot Shape (Original SVG Bow) */
+.prank-mascot-wrap {
+  width: 130px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prank-mascot-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 4px 6px rgba(43, 20, 32, 0.1));
+}
+
+/* Heading: centered top third, Fredoka 600 */
+.prank-heading {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-weight: 600;
+  font-size: 2.2rem;
+  color: var(--prank-ink);
+  letter-spacing: -0.01em;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Fake Visitor Counter */
+.prank-counter {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--prank-ink);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1.5px dashed var(--prank-accent);
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(43, 20, 32, 0.05);
+}
+
+/* Fake Guestbook Button & Tooltip */
+.prank-guestbook-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.prank-guestbook-btn {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--prank-accent);
+  border: 2px solid var(--prank-ink);
+  padding: 0.45rem 1.25rem;
+  border-radius: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--prank-ink);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.prank-guestbook-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--prank-ink);
+}
+
+.prank-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  background: var(--prank-ink);
+  color: #fff;
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.3rem 0.75rem;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.prank-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--prank-ink) transparent transparent transparent;
+}
+
+.prank-tooltip.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   The Hold Button (Unmodified 2A: #FF8A3D / #F4F1EA colors)
+   -------------------------------------------------------------------------- */
+.hold-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  touch-action: none;
+  margin-top: 0.5rem;
+}
+
+.ring-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ring-bg {
+  fill: none;
+  stroke: #FF8A3D;
+  stroke-width: 2px;
+  opacity: 0.35;
+}
+
+.ring-fill {
+  fill: none;
+  stroke: #FF8A3D;
+  stroke-width: 5px;
+  stroke-linecap: round;
+  stroke-dasharray: 314.159;
+}
+
+.flash-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #FF8A3D;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hold-label {
+  color: #F4F1EA;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  text-transform: uppercase;
+  pointer-events: none;
+  background: rgba(5, 6, 11, 0.45);
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Step 3: Punchline Centered Text (#F4F1EA on grey)
+   -------------------------------------------------------------------------- */
+.punchline-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #F4F1EA;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1002;
+  transition: opacity 0.3s ease;
+  max-width: 80vw;
+  background: rgba(35, 35, 38, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 1.25rem 2.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(244, 241, 234, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Sparkle Cursor Particles (CSS/JS lightweight trail)
+   -------------------------------------------------------------------------- */
+.sparkle-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1001;
+  transform: translate(-50%, -50%);
+  animation: sparkle-fade 0.6s forwards cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes sparkle-fade {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2) rotate(45deg);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Burn Canvas for 2B Dissolve
+   -------------------------------------------------------------------------- */
+#burn-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  z-index: 1005;
+  pointer-events: none;
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   Task 7: Beat 7 Name Reveal Overlay (DOM text overlay on top of WebGL canvas)
+   -------------------------------------------------------------------------- */
+.name-reveal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  z-index: 20;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.reveal-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  will-change: opacity, transform;
+  width: 90vw;
+  max-width: 900px;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  box-sizing: border-box;
+}
+
+.reveal-word-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.reveal-word {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(3.5rem, 8vw, 6.5rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  display: block;
+  user-select: none;
+}
+
+.reveal-strikethrough {
+  position: absolute;
+  top: 52%;
+  left: -5%;
+  width: 110%;
+  height: 4px;
+  background-color: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(0);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255, 138, 61, 0.7);
+  pointer-events: none;
+}
+
+.reveal-caption {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(1rem, 2vw, 1.45rem);
+  font-weight: 400;
+  color: var(--text-primary);
+  opacity: 0.85;
+  letter-spacing: 0.03em;
+  margin-top: 1.5rem;
+  line-height: 1.4;
+  user-select: none;
+}
+
+.reveal-birthday {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(4.2rem, 10vw, 8rem);
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+  user-select: none;
+}
+
+/* ==========================================================================
+   Beat 1 Caption Overlay (DOM text overlay on top of WebGL canvas)
+   ========================================================================== */
+
+.beat1-caption-overlay {
+  position: fixed;
+  bottom: calc(12svh + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 20;
+  pointer-events: none;
+  padding: 0 calc(24px + env(safe-area-inset-right, 0px)) 0 calc(24px + env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+.beat1-caption {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(1.15rem, 2.4vw, 1.6rem);
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  user-select: none;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.9);
+}
+
+/* ==========================================================================
+   Beat 2 / Beat 3 Handoff Flash Overlay (DOM overlay)
+   ========================================================================== */
+
+.flash-handoff-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  background-color: #F4F1EA;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 50;
+  will-change: opacity;
+}
+
+/* ==========================================================================
+   Task 14: Beat 8 / ScrapBook Handoff Overlay (#EFE6D2 paper color)
+   ========================================================================== */
+
+.scrapbook-handoff-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  background-color: #EFE6D2;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 200;
+  will-change: opacity;
+}
+
+/* Optional native cross-document view transition support */
+@view-transition {
+  navigation: auto;
+}
+
+

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2A — Hold to Proceed</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #05060B;
+      color: #F4F1EA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .hold-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+      cursor: pointer;
+      touch-action: none;
+    }
+    .ring-wrapper {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ring-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg); /* Start from top */
+    }
+    .ring-bg {
+      fill: none;
+      stroke: #FF8A3D;
+      stroke-width: 2px;
+      opacity: 0.35;
+    }
+    .ring-fill {
+      fill: none;
+      stroke: #FF8A3D;
+      stroke-width: 5px;
+      stroke-linecap: round;
+      stroke-dasharray: 314.159; /* 2 * PI * 50 */
+    }
+    .flash-overlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: #FF8A3D;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .hold-label {
+      color: #F4F1EA;
+      font-size: 0.95rem;
+      letter-spacing: 0.22em;
+      font-weight: 500;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="hold-container" id="hold-btn">
+    <div class="ring-wrapper">
+      <svg class="ring-svg" viewBox="0 0 120 120">
+        <!-- Base Idle Ring -->
+        <circle class="ring-bg" cx="60" cy="60" r="50" />
+        <!-- Clockwise Progress Fill Ring -->
+        <circle class="ring-fill" id="ring-progress" cx="60" cy="60" r="50" />
+      </svg>
+      <!-- Completion Flash Disk -->
+      <div class="flash-overlay" id="flash-overlay"></div>
+    </div>
+    <span class="hold-label">HOLD</span>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const holdBtn = document.getElementById('hold-btn');
+      const ringProgress = document.getElementById('ring-progress');
+      const flashOverlay = document.getElementById('flash-overlay');
+
+      const CIRCUMFERENCE = 2 * Math.PI * 50; // ~314.159
+      const HOLD_DURATION = 1200; // ms
+      const RELEASE_DURATION = 300; // ms
+
+      let isHolding = false;
+      let holdStartTime = 0;
+      let currentProgress = 0;
+      let hasCompleted = false;
+      let releaseStartTime = 0;
+      let releaseStartProgress = 0;
+      let rafId = null;
+
+      function setProgress(p) {
+        currentProgress = Math.max(0, Math.min(1, p));
+        const offset = CIRCUMFERENCE * (1 - currentProgress);
+        ringProgress.setAttribute('stroke-dashoffset', offset);
+        ringProgress.style.strokeDashoffset = `${offset}px`;
+      }
+
+      function triggerCompletionFlash(persist = false) {
+        flashOverlay.style.opacity = '1';
+        if (!persist) {
+          setTimeout(() => {
+            flashOverlay.style.transition = 'opacity 0.25s ease-out';
+            flashOverlay.style.opacity = '0';
+          }, 120);
+        }
+      }
+
+      // Check URL parameters for static screenshot states
+      const params = new URLSearchParams(window.location.search);
+      const state = params.get('state');
+
+      if (state === 'hold50') {
+        setProgress(0.5);
+      } else if (state === 'flash') {
+        setProgress(1.0);
+        triggerCompletionFlash(true);
+      } else {
+        setProgress(0);
+      }
+
+      function update(now) {
+        if (isHolding && !hasCompleted) {
+          const elapsed = now - holdStartTime;
+          const p = elapsed / HOLD_DURATION;
+
+          if (p >= 1.0) {
+            setProgress(1.0);
+            hasCompleted = true;
+            isHolding = false;
+
+            // Log exactly once
+            console.log("hold-complete");
+            
+            // Dispatch custom event
+            const event = new CustomEvent('hold-complete', { bubbles: true });
+            holdBtn.dispatchEvent(event);
+
+            // Completion flash
+            triggerCompletionFlash();
+            return;
+          } else {
+            setProgress(p);
+            rafId = requestAnimationFrame(update);
+          }
+        } else if (!isHolding && currentProgress > 0 && !hasCompleted) {
+          const elapsed = now - releaseStartTime;
+          const releaseProgress = Math.min(1.0, elapsed / RELEASE_DURATION);
+          // Linear / smooth decay to 0
+          const p = releaseStartProgress * (1 - releaseProgress);
+          setProgress(p);
+
+          if (releaseProgress < 1.0) {
+            rafId = requestAnimationFrame(update);
+          } else {
+            setProgress(0);
+          }
+        }
+      }
+
+      function onPointerDown(e) {
+        if (hasCompleted) return;
+        try {
+          holdBtn.setPointerCapture(e.pointerId);
+        } catch (_) {}
+
+        isHolding = true;
+        holdStartTime = performance.now() - (currentProgress * HOLD_DURATION);
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(update);
+      }
+
+      function onPointerUp(e) {
+        if (!isHolding || hasCompleted) return;
+        try {
+          holdBtn.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+
+        isHolding = false;
+        releaseStartTime = performance.now();
+        releaseStartProgress = currentProgress;
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(update);
+      }
+
+      holdBtn.addEventListener('pointerdown', onPointerDown);
+      holdBtn.addEventListener('pointerup', onPointerUp);
+      holdBtn.addEventListener('pointercancel', onPointerUp);
+      holdBtn.addEventListener('pointerleave', onPointerUp);
+
+      // Expose test helper for programmatic testing / screenshots
+      window.holdTestAPI = {
+        setProgress: (p) => setProgress(p),
+        getProgress: () => currentProgress,
+        triggerFlash: (persist = false) => triggerCompletionFlash(persist),
+        simulateHold: (durationMs, callback) => {
+          onPointerDown({ pointerId: 1 });
+          setTimeout(() => {
+            onPointerUp({ pointerId: 1 });
+            if (callback) callback();
+          }, durationMs);
+        }
+      };
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+Model Information:
+* title:	MiG-21 Bison
+* source:	https://sketchfab.com/3d-models/mig-21-bison-f60f84227a954e3293e5ccb016c2de3f
+* author:	OUTPISTON (https://sketchfab.com/outpiston)
+
+Model License:
+* license type:	CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)
+* requirements:	Author must be credited. No commercial use. Modified versions must have the same license.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "MiG-21 Bison" (https://sketchfab.com/3d-models/mig-21-bison-f60f84227a954e3293e5ccb016c2de3f) by OUTPISTON (https://sketchfab.com/outpiston) licensed under CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)

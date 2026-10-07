@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Centrale Markthal (Hangar) Orientation & Normalization Test</title>
+  <style>
+    body {
+      margin: 0;
+      background: #05060B;
+      color: #F4F1EA;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+    }
+    #hud {
+      position: fixed;
+      top: 1.5rem;
+      left: 1.5rem;
+      color: #F4F1EA;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      background: rgba(5, 6, 11, 0.88);
+      padding: 0.85rem 1.25rem;
+      border: 1px solid #FF8A3D;
+      border-radius: 6px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .hud-title {
+      color: #FF8A3D;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.35rem;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/GLTFLoader.js"></script>
+</head>
+<body>
+  <div id="hud">
+    <div class="hud-title">CENTRALE MARKTHAL ORIENTATION TEST</div>
+    <div id="hud-stats">Loading model...</div>
+  </div>
+  <div id="canvas-container"></div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get('view') || 'three_quarter';
+    const rotY = parseFloat(urlParams.get('rotY') || '0');
+
+    const container = document.getElementById('canvas-container');
+    const hudStats = document.getElementById('hud-stats');
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05060B);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 5000);
+
+    if (viewParam === 'down_axis') {
+      // Looking directly down the long Z axis through the open hall
+      camera.position.set(0, 10, 110);
+      camera.lookAt(0, 10, -100);
+      camera.fov = 48;
+    } else {
+      // 3/4 exterior perspective view
+      camera.position.set(110, 80, 130);
+      camera.lookAt(0, 5, 0);
+      camera.fov = 50;
+    }
+    camera.updateProjectionMatrix();
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    container.appendChild(renderer.domElement);
+
+    // Subtle lighting matching main scene
+    const ambLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    dirLight.position.set(100, 150, 100);
+    scene.add(dirLight);
+
+    const rimLight = new THREE.DirectionalLight(0xFF8A3D, 0.6);
+    rimLight.position.set(-100, -50, -100);
+    scene.add(rimLight);
+
+    const KEEP_KEYWORDS = [
+      'Roof Frame',
+      'Roof |',
+      'exterior masonry',
+      'loading doors lintels and hoists',
+      'Floor |',
+      'Foundation |',
+      'Vertical brace'
+    ];
+
+    function shouldKeepNode(name) {
+      if (!name) return false;
+      const normalized = name.replace(/_/g, ' ');
+      if (normalized.includes('gabled masonry shell')) return false; // Explicitly excluded solid end walls
+      return KEEP_KEYWORDS.some(kw => normalized.includes(kw));
+    }
+
+    const loader = new THREE.GLTFLoader();
+    window.modelReady = false;
+
+    loader.load('models/hangar/scene.gltf', (gltf) => {
+      const root = gltf.scene;
+
+      // Collect kept nodes
+      const keptGroups = [];
+      const nodesToRemove = [];
+
+      // Find GLTF_SceneRootNode or direct children
+      let sceneRoot = root;
+      root.traverse(child => {
+        if (child.name === 'GLTF_SceneRootNode') {
+          sceneRoot = child;
+        }
+      });
+
+      // Filter children under sceneRoot
+      const children = [...sceneRoot.children];
+      children.forEach(child => {
+        if (shouldKeepNode(child.name)) {
+          keptGroups.push(child);
+        } else {
+          nodesToRemove.push(child);
+        }
+      });
+
+      // Remove excluded nodes
+      nodesToRemove.forEach(node => {
+        if (node.parent) node.parent.remove(node);
+      });
+
+      // Assemble into a clean container
+      const hangarGroup = new THREE.Group();
+      hangarGroup.name = 'hangar_assembly';
+
+      const innerGroup = new THREE.Group();
+      innerGroup.name = 'hangar_inner';
+      hangarGroup.add(innerGroup);
+
+      // Move kept groups to innerGroup
+      keptGroups.forEach(node => {
+        innerGroup.add(node);
+      });
+
+      // Compute raw bounding box of kept set
+      const rawBox = new THREE.Box3().setFromObject(innerGroup);
+      const rawCenter = new THREE.Vector3();
+      rawBox.getCenter(rawCenter);
+      const rawSize = new THREE.Vector3();
+      rawBox.getSize(rawSize);
+
+      // Center innerGroup so its geometric center sits precisely at (0, 0, 0)
+      innerGroup.position.copy(rawCenter).negate();
+
+      // Scale uniformly so X span becomes 90 world units
+      const scaleFactor = 90.0 / rawSize.x;
+      hangarGroup.scale.setScalar(scaleFactor);
+
+      if (rotY !== 0) {
+        hangarGroup.rotation.y = THREE.MathUtils.degToRad(rotY);
+      }
+
+      // Material override: dark body #05060B + EdgesGeometry(45) in #FF8A3D
+      const bodyMaterial = new THREE.MeshStandardMaterial({
+        color: 0x05060B,
+        roughness: 0.6,
+        metalness: 0.1
+      });
+
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: 0xFF8A3D,
+        linewidth: 1.5
+      });
+
+      let totalVertices = 0;
+      let totalTriangles = 0;
+      let meshCount = 0;
+
+      hangarGroup.traverse(child => {
+        if (child.isMesh && child.geometry) {
+          meshCount++;
+          const geom = child.geometry;
+          if (geom.attributes.position) {
+            totalVertices += geom.attributes.position.count;
+          }
+          if (geom.index) {
+            totalTriangles += geom.index.count / 3;
+          } else if (geom.attributes.position) {
+            totalTriangles += geom.attributes.position.count / 3;
+          }
+
+          child.material = bodyMaterial;
+          child.castShadow = false;
+          child.receiveShadow = false;
+
+          const edges = new THREE.EdgesGeometry(geom, 45);
+          const lineSegments = new THREE.LineSegments(edges, edgeMaterial);
+          child.add(lineSegments);
+        }
+      });
+
+      const scaledBox = new THREE.Box3().setFromObject(hangarGroup);
+      const scaledSize = new THREE.Vector3();
+      scaledBox.getSize(scaledSize);
+
+      const wrapper = new THREE.Group();
+      wrapper.add(hangarGroup);
+      scene.add(wrapper);
+
+      window.hangarData = {
+        rawSpan: [rawSize.x, rawSize.y, rawSize.z],
+        rawCenter: [rawCenter.x, rawCenter.y, rawCenter.z],
+        scaleFactor: scaleFactor,
+        scaledSpan: [scaledSize.x, scaledSize.y, scaledSize.z],
+        keptGroupCount: keptGroups.length,
+        meshCount: meshCount,
+        vertexCount: totalVertices,
+        triangleCount: Math.round(totalTriangles)
+      };
+
+      hudStats.innerHTML = `
+        <div>Kept Groups: <b>${keptGroups.length}</b></div>
+        <div>Total Meshes: <b>${meshCount}</b></div>
+        <div>Vertices: <b>${totalVertices.toLocaleString()}</b> (Target: ~156k)</div>
+        <div>Triangles: <b>${Math.round(totalTriangles).toLocaleString()}</b></div>
+        <div>Raw Span: <b>[${rawSize.x.toFixed(2)}, ${rawSize.y.toFixed(2)}, ${rawSize.z.toFixed(2)}]</b></div>
+        <div>Scale Factor: <b>${scaleFactor.toFixed(4)}</b> (90 / ${rawSize.x.toFixed(2)})</div>
+        <div>Scaled Span: <b>[${scaledSize.x.toFixed(2)}, ${scaledSize.y.toFixed(2)}, ${scaledSize.z.toFixed(2)}]</b></div>
+        <div>Long Axis: <b>Z = ${scaledSize.z.toFixed(2)} units</b></div>
+      `;
+
+      window.modelReady = true;
+      renderer.render(scene, camera);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (window.modelReady) {
+        renderer.render(scene, camera);
+      }
+    }
+    animate();
+  </script>
+</body>
+</html>

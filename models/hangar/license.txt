@@ -1,0 +1,11 @@
+Model Information:
+* title:	Centrale Markthal, Amsterdam (Interior+Exterior)
+* source:	https://sketchfab.com/3d-models/centrale-markthal-amsterdam-interiorexterior-a11dee950272459b935ecb469730e6bc
+* author:	Jungle Jim (https://sketchfab.com/jungle_jim)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Centrale Markthal, Amsterdam (Interior+Exterior)" (https://sketchfab.com/3d-models/centrale-markthal-amsterdam-interiorexterior-a11dee950272459b935ecb469730e6bc) by Jungle Jim (https://sketchfab.com/jungle_jim) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

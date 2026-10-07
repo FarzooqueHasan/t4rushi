@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Black Hole Step 0 — Loader & Specular-Glossiness Test</title>
+  <style>
+    body { margin: 0; background: #000; overflow: hidden; }
+    #canvas-container { width: 100vw; height: 100vh; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/GLTFLoader.js"></script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <script>
+    window.loadReport = {
+      loaded: false,
+      error: null,
+      warnings: [],
+      materials: [],
+      meshCount: 0,
+      nodes: []
+    };
+
+    const origWarn = console.warn;
+    console.warn = function(...args) {
+      window.loadReport.warnings.push(args.join(' '));
+      origWarn.apply(console, args);
+    };
+
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x05060B);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50000);
+    camera.position.set(0, 500, 3000);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    container.appendChild(renderer.domElement);
+
+    const ambLight = new THREE.AmbientLight(0xffffff, 1.0);
+    scene.add(ambLight);
+
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      'models/blackhole/scene.gltf',
+      function (gltf) {
+        window.loadReport.loaded = true;
+        const root = gltf.scene;
+        scene.add(root);
+
+        const box = new THREE.Box3().setFromObject(root);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        root.position.sub(center);
+
+        // Center and frame camera on model
+        const maxDim = Math.max(size.x, size.y, size.z);
+        camera.position.set(0, maxDim * 0.3, maxDim * 1.5);
+        camera.lookAt(0, 0, 0);
+
+        root.traverse(child => {
+          if (child.name) window.loadReport.nodes.push(child.name);
+          if (child.isMesh) {
+            window.loadReport.meshCount++;
+            const mat = child.material;
+            const matInfo = {
+              meshName: child.name,
+              matType: mat ? mat.type : 'none',
+              matName: mat ? mat.name : 'none',
+              hasMap: Boolean(mat && mat.map),
+              hasEmissiveMap: Boolean(mat && mat.emissiveMap),
+              hasRoughnessMap: Boolean(mat && mat.roughnessMap),
+              hasMetalnessMap: Boolean(mat && mat.metalnessMap),
+              color: mat && mat.color ? '#' + mat.color.getHexString() : null,
+              emissive: mat && mat.emissive ? '#' + mat.emissive.getHexString() : null,
+              transparent: mat ? mat.transparent : false,
+              opacity: mat ? mat.opacity : 1.0
+            };
+            window.loadReport.materials.push(matInfo);
+          }
+        });
+
+        renderer.render(scene, camera);
+        window.step0Ready = true;
+      },
+      undefined,
+      function (err) {
+        window.loadReport.error = String(err);
+        window.step0Ready = true;
+      }
+    );
+  </script>
+</body>
+</html>

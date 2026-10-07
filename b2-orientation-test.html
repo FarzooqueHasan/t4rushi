@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B2 Bomber — Orientation Verification Test</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #05060B;
+      color: #F4F1EA;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+    #hud {
+      position: fixed;
+      top: 1.5rem;
+      left: 1.5rem;
+      z-index: 10;
+      background: rgba(5, 6, 11, 0.85);
+      border: 1px solid rgba(255, 138, 61, 0.4);
+      border-radius: 6px;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      pointer-events: none;
+    }
+    .hud-title {
+      color: #FF8A3D;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.25rem;
+    }
+    .hud-stat {
+      color: #F4F1EA;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/OBJLoader.js"></script>
+</head>
+<body>
+  <div id="hud">
+    <div class="hud-title" id="hud-view-title">B2 ORIENTATION CHECK</div>
+    <div class="hud-stat" id="hud-info">Loading B2 Bomber.obj...</div>
+  </div>
+  <div id="canvas-container"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const container = document.getElementById('canvas-container');
+      const hudViewTitle = document.getElementById('hud-view-title');
+      const hudInfo = document.getElementById('hud-info');
+
+      // 1. Scene, Camera, Renderer
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x05060B);
+
+      const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      container.appendChild(renderer.domElement);
+
+      // 2. Lighting (Per spec: DirectionalLight #FF8A3D 0.4 rim + neutral AmbientLight 0.15)
+      const dirLight = new THREE.DirectionalLight(0xFF8A3D, 0.4);
+      dirLight.position.set(0, 30, 40);
+      scene.add(dirLight);
+
+      const ambLight = new THREE.AmbientLight(0xF4F1EA, 0.15);
+      scene.add(ambLight);
+
+      // Helper Axes to clearly show local coordinates (+X = Red, +Y = Green, +Z = Blue)
+      const axesHelper = new THREE.AxesHelper(15);
+      scene.add(axesHelper);
+
+      // 3. View mode from URL (?view=top | ?view=side)
+      const urlParams = new URLSearchParams(window.location.search);
+      const viewMode = urlParams.get('view') || 'top';
+
+      if (viewMode === 'side') {
+        // Directly from the side (viewing along +X axis towards origin)
+        // Camera at (+60, 0, 0), looking at (0, 0, 0), UP is +Y
+        camera.position.set(55, 4, 0);
+        camera.up.set(0, 1, 0);
+        camera.lookAt(0, 0, 0);
+        hudViewTitle.innerText = "DIRECTLY FROM SIDE (VIEW: +X -> ORIGIN)";
+      } else {
+        // Directly from above (top-down: viewing along +Y axis towards origin)
+        // Camera at (0, 60, 0), looking at (0, 0, 0)
+        // With camera.up set to (0, 0, -1), local -Z points UP on screen, +Z points DOWN on screen
+        camera.position.set(0, 55, 0);
+        camera.up.set(0, 0, -1);
+        camera.lookAt(0, 0, 0);
+        hudViewTitle.innerText = "DIRECTLY FROM ABOVE (TOP-DOWN VIEW, -Z = UP)";
+      }
+
+      function render() {
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        render();
+      });
+
+      // 4. Load and Clean B2 Bomber OBJ
+      const DISCARD_GROUPS = new Set(['Spawnlocation1', 'Spawnlocation2', 'Baseplate1', 'Baseplate2']);
+
+      const loader = new THREE.OBJLoader();
+      loader.load('B2 Bomber.obj', (obj) => {
+        const aircraftGroup = new THREE.Group();
+        aircraftGroup.name = "B2_Bomber_Aircraft";
+
+        let filteredCount = 0;
+        let keepCount = 0;
+
+        // Traverse children and discard baseplate/spawnlocation groups
+        const childrenToProcess = [...obj.children];
+        childrenToProcess.forEach(child => {
+          const name = child.name || '';
+          const isRobloxArtifact = DISCARD_GROUPS.has(name) || 
+                                   name.startsWith('Spawnlocation') || 
+                                   name.startsWith('Baseplate');
+
+          if (isRobloxArtifact) {
+            filteredCount++;
+            console.log(`[B2 Loader] Filtered out Roblox group: ${name}`);
+          } else {
+            keepCount++;
+            aircraftGroup.add(child);
+          }
+        });
+
+        console.log(`[B2 Loader] Discarded ${filteredCount} Roblox groups.`);
+        console.log(`[B2 Loader] Kept ${keepCount} aircraft groups.`);
+        console.log(`[B2 Loader] Confirmed: Roblox baseplate/spawn groups were never added to the scene.`);
+
+        // Compute combined bounding box of remaining geometry
+        const rawBox = new THREE.Box3().setFromObject(aircraftGroup);
+        const rawCenter = rawBox.getCenter(new THREE.Vector3());
+        const rawSize = rawBox.getSize(new THREE.Vector3());
+
+        console.log(`[B2 Loader] Raw Bounds: min=(${rawBox.min.x.toFixed(2)}, ${rawBox.min.y.toFixed(2)}, ${rawBox.min.z.toFixed(2)}) max=(${rawBox.max.x.toFixed(2)}, ${rawBox.max.y.toFixed(2)}, ${rawBox.max.z.toFixed(2)})`);
+        console.log(`[B2 Loader] Raw Center: (${rawCenter.x.toFixed(2)}, ${rawCenter.y.toFixed(2)}, ${rawCenter.z.toFixed(2)})`);
+        console.log(`[B2 Loader] Raw Dimensions: X=${rawSize.x.toFixed(2)}, Y=${rawSize.y.toFixed(2)}, Z=${rawSize.z.toFixed(2)}`);
+
+        // Translate all geometry to be centered on local origin (0, 0, 0)
+        aircraftGroup.traverse(child => {
+          if (child.isMesh && child.geometry) {
+            child.geometry.translate(-rawCenter.x, -rawCenter.y, -rawCenter.z);
+            child.geometry.computeBoundingBox();
+          }
+        });
+
+        // Compute the model's wingspan axis (the longest horizontal span)
+        // Horizontal dimensions are X and Z
+        const wingspan = Math.max(rawSize.x, rawSize.z);
+        const wingspanAxis = rawSize.x >= rawSize.z ? "X" : "Z";
+        const targetSpan = 40.0;
+        const scaleFactor = targetSpan / wingspan;
+
+        console.log(`[B2 Loader] Longest horizontal span (Wingspan): ${wingspan.toFixed(2)} along ${wingspanAxis} axis.`);
+        console.log(`[B2 Loader] Computed uniform scale factor: ${scaleFactor.toFixed(5)} (Target: ${targetSpan} units)`);
+
+        aircraftGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+        // Apply materials and EdgesGeometry outline pass
+        // Body: MeshStandardMaterial #05060B, roughness 0.6, metalness 0.1
+        // Edge: EdgesGeometry LineBasicMaterial #FF8A3D
+        const bodyMaterial = new THREE.MeshStandardMaterial({
+          color: 0x05060B,
+          roughness: 0.6,
+          metalness: 0.1
+        });
+
+        const edgeMaterial = new THREE.LineBasicMaterial({
+          color: 0xFF8A3D,
+          linewidth: 1
+        });
+
+        aircraftGroup.traverse(child => {
+          if (child.isMesh && child.geometry) {
+            child.material = bodyMaterial;
+            const edgesGeo = new THREE.EdgesGeometry(child.geometry, 28);
+            const edgesLine = new THREE.LineSegments(edgesGeo, edgeMaterial);
+            child.add(edgesLine);
+          }
+        });
+
+        scene.add(aircraftGroup);
+
+        // Verify normalized bounding box
+        const normBox = new THREE.Box3().setFromObject(aircraftGroup);
+        const normSize = normBox.getSize(new THREE.Vector3());
+        const normCenter = normBox.getCenter(new THREE.Vector3());
+
+        console.log(`[B2 Loader] Normalized Wingspan: ${normSize.x.toFixed(2)} x ${normSize.z.toFixed(2)} (Height: ${normSize.y.toFixed(2)})`);
+        console.log(`[B2 Loader] Normalized Center: (${normCenter.x.toFixed(3)}, ${normCenter.y.toFixed(3)}, ${normCenter.z.toFixed(3)})`);
+
+        hudInfo.innerHTML = `
+          Wingspan (${wingspanAxis}): <b>${targetSpan.toFixed(1)} units</b> (Scale: ${scaleFactor.toFixed(4)})<br>
+          Center: (${normCenter.x.toFixed(2)}, ${normCenter.y.toFixed(2)}, ${normCenter.z.toFixed(2)})<br>
+          Groups Kept: <b>${keepCount}</b> | Filtered: <b>${filteredCount}</b>
+        `;
+
+        render();
+
+        window.b2ModelReady = true;
+        window.b2Aircraft = aircraftGroup;
+      }, (xhr) => {
+        if (xhr.lengthComputable) {
+          const percent = (xhr.loaded / xhr.total) * 100;
+          hudInfo.innerText = `Loading OBJ: ${percent.toFixed(0)}%`;
+        }
+      }, (err) => {
+        console.error("[B2 Loader] Error loading OBJ:", err);
+        hudInfo.innerText = `Error loading OBJ: ${err.message}`;
+      });
+    })();
+  </script>
+</body>
+</html>

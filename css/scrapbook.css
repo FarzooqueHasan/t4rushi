@@ -1,0 +1,942 @@
+/* ==========================================================================
+   Tarushi's ScrapBook — Base Styles & Design Tokens
+   Palette (strictly bounded):
+   - Page background (paper): #EFE6D2
+   - All text and borders (ink): #1F1A17
+   - Tape strips only: #FF8A3D at 85% opacity
+   - Sheet and polaroid frames: #FFFFFF
+   - Ticket stub: #F7F0DF
+   - SVG paper noise overlay: feTurbulence at 8% opacity
+   ========================================================================== */
+
+:root {
+  --color-paper: #EFE6D2;
+  --color-ink: #1F1A17;
+  --color-tape: rgba(255, 138, 61, 0.85);
+  --color-sheet: #FFFFFF;
+  --color-ticket: #F7F0DF;
+  --color-ink-translucent: rgba(31, 26, 23, 0.4);
+  --color-shadow-heavy: rgba(31, 26, 23, 0.22);
+  --color-shadow-light: rgba(31, 26, 23, 0.18);
+
+  --font-handwriting: 'Caveat', cursive, sans-serif;
+  --font-typewriter: 'Special Elite', monospace;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--color-paper);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-typewriter);
+  min-height: 100svh;
+  position: relative;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Paper Texture Overlay: inline-SVG feTurbulence noise at 8% opacity */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='paper-noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper-noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* ==========================================================================
+   Components Specification
+   ========================================================================== */
+
+/* .sheet */
+.sheet {
+  background-color: var(--color-sheet);
+  padding: 10px;
+  box-shadow: 0 10px 24px var(--color-shadow-heavy), 0 2px 4px var(--color-shadow-light);
+  transform: rotate(var(--rot, 0deg));
+  transform-origin: center center;
+  position: relative;
+  display: block;
+  margin: 0;
+}
+
+.sheet img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* .tape */
+.tape {
+  width: 96px;
+  height: 28px;
+  background-color: var(--color-tape);
+  clip-path: polygon(3% 0, 97% 0, 100% 50%, 97% 100%, 3% 100%, 0 50%);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Tape Corner Placements */
+.tape-tl {
+  top: -12px;
+  left: -20px;
+  transform: rotate(var(--tape-rot, -35deg));
+}
+
+.tape-tr {
+  top: -12px;
+  right: -20px;
+  transform: rotate(var(--tape-rot, 35deg));
+}
+
+.tape-tc {
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%) rotate(var(--tape-rot, 32deg));
+}
+
+.tape-bl {
+  bottom: -12px;
+  left: -20px;
+  transform: rotate(var(--tape-rot, 35deg));
+}
+
+.tape-br {
+  bottom: -12px;
+  right: -20px;
+  transform: rotate(var(--tape-rot, -35deg));
+}
+
+/* .note */
+.note {
+  font-family: var(--font-handwriting);
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--color-ink);
+  background: none;
+  margin: 14px 0 0 0;
+  padding: 0;
+  line-height: 1.2;
+  transform: rotate(var(--note-rot, 1deg));
+  transform-origin: center center;
+  display: block;
+}
+
+/* .stamp */
+.stamp {
+  font-family: var(--font-typewriter);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  border: 2px solid var(--color-ink);
+  padding: 6px 14px;
+  color: var(--color-ink);
+  transform: rotate(var(--stamp-rot, -2deg));
+  transform-origin: center center;
+  display: inline-block;
+  user-select: none;
+  font-size: 16px;
+}
+
+/* .ticket */
+.ticket {
+  width: 320px;
+  background-color: var(--color-ticket);
+  border-left: 2px dashed var(--color-ink-translucent);
+  font-family: var(--font-typewriter);
+  font-size: 14px;
+  color: var(--color-ink);
+  text-transform: uppercase;
+  padding: 16px 20px;
+  transform: rotate(var(--ticket-rot, 4deg));
+  transform-origin: center center;
+  box-shadow: 0 4px 14px rgba(31, 26, 23, 0.12), 0 1px 3px rgba(31, 26, 23, 0.08);
+}
+
+.ticket-line {
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   Cover Section (First Viewport)
+   ========================================================================== */
+
+.cover-section {
+  width: 100%;
+  height: 100svh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  padding: 0 20px;
+}
+
+.cover-header {
+  position: relative;
+  display: inline-block;
+}
+
+.cover-tape {
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%) rotate(var(--cover-tape-rot, -4deg));
+}
+
+.cover-title {
+  font-family: var(--font-handwriting);
+  font-weight: 600;
+  font-size: clamp(56px, 10vw, 128px);
+  color: var(--color-ink);
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.cover-subtitle {
+  font-family: var(--font-typewriter);
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--color-ink);
+  margin-top: 16px;
+  margin-bottom: 0;
+  letter-spacing: 0.08em;
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-handwriting);
+  font-weight: 600;
+  font-size: 40px;
+  color: var(--color-ink);
+  text-decoration: none;
+  animation: bob 1.6s ease-in-out infinite;
+  user-select: none;
+  line-height: 1;
+}
+
+@keyframes bob {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(8px);
+  }
+}
+
+/* ==========================================================================
+   Spread Sections Base & Flight Log Spread
+   ========================================================================== */
+
+.spread-flight-log,
+.spread {
+  min-height: 100svh;
+  padding: 10vh 5vw;
+  position: relative;
+}
+
+.flight-log-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* Grid item positioning (Desktop >= 900px) */
+.spread-stamp {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: start;
+  margin-bottom: 5vh;
+}
+
+.spread-b2 {
+  grid-column: 1 / span 5;
+  grid-row: 2;
+}
+
+.spread-fighter-top {
+  grid-column: 6 / span 4;
+  grid-row: 2 / span 2;
+  margin-top: 6vh;
+}
+
+.spread-fighter-side {
+  grid-column: 10 / span 3;
+  grid-row: 2 / span 2;
+  margin-top: 14vh;
+}
+
+.spread-ticket {
+  grid-column: 1 / span 4;
+  grid-row: 3;
+  margin-top: 8vh;
+}
+
+/* Rotations for sheets, notes, stamps, ticket */
+.sheet-b2 {
+  --rot: -3deg;
+}
+
+.sheet-fighter-top {
+  --rot: 2deg;
+}
+
+.sheet-fighter-side {
+  --rot: -2deg;
+}
+
+.note-b2 {
+  --note-rot: -1deg;
+}
+
+.note-fighter-top {
+  --note-rot: 1deg;
+}
+
+.note-fighter-side {
+  --note-rot: -1deg;
+}
+
+.stamp-flight-log {
+  --stamp-rot: -2deg;
+}
+
+.ticket-flight-log {
+  --ticket-rot: 4deg;
+}
+
+/* ==========================================================================
+   Studio Pages Spread (7 Artworks, 2 Size Tiers, Masonry Grid)
+   ========================================================================== */
+
+.spread-studio {
+  margin-top: 8vh;
+}
+
+.studio-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.stamp-studio {
+  --stamp-rot: 1.5deg;
+}
+
+/* Featured tier: Sunset Sailboat and Celestial Dragon */
+.spread-art-sunset {
+  grid-column: 1 / span 7;
+  grid-row: 2;
+}
+
+.sheet-art-sunset {
+  --rot: -1.5deg;
+}
+
+.note-art-sunset {
+  --note-rot: -0.5deg;
+}
+
+.spread-art-jellyfish {
+  grid-column: 8 / span 5;
+  grid-row: 2;
+  margin-top: 4vh;
+}
+
+.sheet-art-jellyfish {
+  --rot: 2deg;
+}
+
+.note-art-jellyfish {
+  --note-rot: 1deg;
+}
+
+.spread-art-dragon-color {
+  grid-column: 1 / span 5;
+  grid-row: 3;
+  margin-top: 3vh;
+}
+
+.sheet-art-dragon-color {
+  --rot: 1.5deg;
+}
+
+.note-art-dragon-color {
+  --note-rot: 0.8deg;
+}
+
+.spread-art-cafe {
+  grid-column: 6 / span 4;
+  grid-row: 3;
+  margin-top: 6vh;
+}
+
+.sheet-art-cafe {
+  --rot: -2deg;
+}
+
+.note-art-cafe {
+  --note-rot: -1deg;
+}
+
+.spread-art-dragon-head {
+  grid-column: 10 / span 3;
+  grid-row: 3;
+  margin-top: 10vh;
+}
+
+.sheet-art-dragon-head {
+  --rot: 2.5deg;
+}
+
+.note-art-dragon-head {
+  --note-rot: 1.2deg;
+}
+
+.spread-art-apple {
+  grid-column: 2 / span 5;
+  grid-row: 4;
+  margin-top: 4vh;
+}
+
+.sheet-art-apple {
+  --rot: -1deg;
+}
+
+.note-art-apple {
+  --note-rot: -0.5deg;
+}
+
+.spread-art-orange {
+  grid-column: 7 / span 5;
+  grid-row: 4;
+  margin-top: 6vh;
+}
+
+.sheet-art-orange {
+  --rot: 1.5deg;
+}
+
+.note-art-orange {
+  --note-rot: 0.8deg;
+}
+
+/* ==========================================================================
+   Mixtape Spread (Backstage Pass Ticket + Note)
+   ========================================================================== */
+
+.spread-mixtape {
+  min-height: 70svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8vh;
+}
+
+.mixtape-container {
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stamp-mixtape {
+  --stamp-rot: -2deg;
+}
+
+.spread-ticket-mixtape {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ticket-backstage {
+  --ticket-rot: -2deg;
+  width: 340px;
+  background-color: var(--color-ticket);
+  border-left: 3px dashed var(--color-ink-translucent);
+}
+
+.ticket-pass-title {
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--color-ink);
+  margin-bottom: 6px;
+}
+
+.ticket-link-line {
+  margin: 8px 0;
+}
+
+.spotify-link {
+  font-family: var(--font-typewriter);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(31, 26, 23, 0.06);
+  border-radius: 4px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.spotify-link:hover {
+  background: rgba(255, 138, 61, 0.2);
+  transform: translateY(-1px);
+}
+
+.ticket-sub {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+  margin-top: 6px;
+}
+
+.note-mixtape {
+  --note-rot: 2deg;
+  font-size: 32px;
+  margin-top: 24px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Game Day Spread (Placeholder Only)
+   ========================================================================== */
+
+.spread-gameday {
+  min-height: 60svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8vh;
+}
+
+.gameday-container {
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stamp-gameday {
+  --stamp-rot: 2deg;
+}
+
+.spread-ticket-gameday {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ticket-gameday {
+  --ticket-rot: 2.5deg;
+  width: 340px;
+  background-color: var(--color-ticket);
+  border-left: 3px dashed var(--color-ink-translucent);
+}
+
+.note-gameday {
+  --note-rot: -1.5deg;
+  font-size: 26px;
+  margin-top: 22px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   Photo Booth Spread (4 Solo Photos, Polaroid Strip Layout)
+   ========================================================================== */
+
+.spread-photobooth {
+  margin-top: 8vh;
+}
+
+.photobooth-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.stamp-photobooth {
+  --stamp-rot: -1.5deg;
+}
+
+.sheet-polaroid {
+  padding: 12px 12px 32px 12px;
+}
+
+.spread-photo-hills {
+  grid-column: 1 / span 3;
+  grid-row: 2;
+  margin-top: 2vh;
+}
+
+.sheet-photo-hills {
+  --rot: -2deg;
+}
+
+.note-photo-hills {
+  --note-rot: -0.8deg;
+  font-size: 24px;
+}
+
+.spread-photo-stairs {
+  grid-column: 4 / span 3;
+  grid-row: 2;
+  margin-top: 8vh;
+}
+
+.sheet-photo-stairs {
+  --rot: 1.5deg;
+}
+
+.note-photo-stairs {
+  --note-rot: 0.8deg;
+  font-size: 24px;
+}
+
+.spread-photo-field {
+  grid-column: 7 / span 3;
+  grid-row: 2;
+  margin-top: 3vh;
+}
+
+.sheet-photo-field {
+  --rot: -2deg;
+}
+
+.note-photo-field {
+  --note-rot: -0.8deg;
+  font-size: 24px;
+}
+
+.spread-photo-door {
+  grid-column: 10 / span 3;
+  grid-row: 2;
+  margin-top: 9vh;
+}
+
+.sheet-photo-door {
+  --rot: 2.2deg;
+}
+
+.note-photo-door {
+  --note-rot: 1deg;
+  font-size: 24px;
+}
+
+/* ==========================================================================
+   Motion: Scroll Reveal with IntersectionObserver
+   ========================================================================== */
+
+.spread-item {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 600ms ease-out, transform 600ms ease-out;
+  will-change: opacity, transform;
+}
+
+.spread-item.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .spread-item {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .scroll-indicator {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   Phone Layout (under 900px) — Universal Spread Breakpoint
+   ========================================================================== */
+
+@media (max-width: 899px) {
+  .spread-flight-log,
+  .spread {
+    padding: 8vh 6vw;
+  }
+
+  .flight-log-grid,
+  .studio-grid,
+  .photobooth-grid,
+  .mixtape-container,
+  .gameday-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .spread-item {
+    width: 88vw;
+    max-width: 88vw;
+    margin-top: 0 !important;
+    margin-bottom: 48px;
+  }
+
+  .spread-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .spread-stamp {
+    width: 88vw;
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 32px;
+  }
+
+  /* Every rotation halved under 900px */
+  .cover-tape {
+    --cover-tape-rot: -2deg;
+  }
+
+  .stamp-flight-log {
+    --stamp-rot: -1deg;
+  }
+
+  .sheet-b2 {
+    --rot: -1.5deg;
+  }
+
+  .sheet-fighter-top {
+    --rot: 1deg;
+  }
+
+  .sheet-fighter-side {
+    --rot: -1deg;
+  }
+
+  .note-b2 {
+    --note-rot: -0.5deg;
+  }
+
+  .note-fighter-top {
+    --note-rot: 0.5deg;
+  }
+
+  .note-fighter-side {
+    --note-rot: -0.5deg;
+  }
+
+  .ticket-flight-log {
+    --ticket-rot: 2deg;
+    width: 88vw;
+    max-width: 320px;
+  }
+
+  /* Studio Pages: Halved Rotations */
+  .stamp-studio {
+    --stamp-rot: 0.75deg;
+  }
+
+  .sheet-art-sunset {
+    --rot: -0.75deg;
+  }
+
+  .note-art-sunset {
+    --note-rot: -0.25deg;
+  }
+
+  .sheet-art-jellyfish {
+    --rot: 1deg;
+  }
+
+  .note-art-jellyfish {
+    --note-rot: 0.5deg;
+  }
+
+  .sheet-art-dragon-color {
+    --rot: 0.75deg;
+  }
+
+  .note-art-dragon-color {
+    --note-rot: 0.4deg;
+  }
+
+  .sheet-art-cafe {
+    --rot: -1deg;
+  }
+
+  .note-art-cafe {
+    --note-rot: -0.5deg;
+  }
+
+  .sheet-art-dragon-head {
+    --rot: 1.25deg;
+  }
+
+  .note-art-dragon-head {
+    --note-rot: 0.6deg;
+  }
+
+  .sheet-art-apple {
+    --rot: -0.5deg;
+  }
+
+  .note-art-apple {
+    --note-rot: -0.25deg;
+  }
+
+  .sheet-art-orange {
+    --rot: 0.75deg;
+  }
+
+  .note-art-orange {
+    --note-rot: 0.4deg;
+  }
+
+  /* Mixtape: Halved Rotations */
+  .stamp-mixtape {
+    --stamp-rot: -1deg;
+  }
+
+  .ticket-backstage {
+    --ticket-rot: -1deg;
+    width: 88vw;
+    max-width: 340px;
+  }
+
+  .note-mixtape {
+    --note-rot: 1deg;
+  }
+
+  /* Game Day: Halved Rotations */
+  .stamp-gameday {
+    --stamp-rot: 1deg;
+  }
+
+  .ticket-gameday {
+    --ticket-rot: 1.25deg;
+    width: 88vw;
+    max-width: 340px;
+  }
+
+  .note-gameday {
+    --note-rot: -0.75deg;
+  }
+
+  /* Photo Booth: Halved Rotations */
+  .stamp-photobooth {
+    --stamp-rot: -0.75deg;
+  }
+
+  .sheet-photo-hills {
+    --rot: -1deg;
+  }
+
+  .note-photo-hills {
+    --note-rot: -0.4deg;
+  }
+
+  .sheet-photo-stairs {
+    --rot: 0.75deg;
+  }
+
+  .note-photo-stairs {
+    --note-rot: 0.4deg;
+  }
+
+  .sheet-photo-field {
+    --rot: -1deg;
+  }
+
+  .note-photo-field {
+    --note-rot: -0.4deg;
+  }
+
+  .sheet-photo-door {
+    --rot: 1.1deg;
+  }
+
+  .note-photo-door {
+    --note-rot: 0.5deg;
+  }
+}
+
+/* ==========================================================================
+   Attribution Footer (Small, Muted with Safe Area Inset)
+   ========================================================================== */
+
+.scrapbook-footer {
+  width: 100%;
+  max-width: 1200px;
+  margin: 80px auto 40px auto;
+  padding: 24px 5vw calc(40px + env(safe-area-inset-bottom, 0px)) 5vw;
+  box-sizing: border-box;
+  text-align: center;
+  font-family: var(--font-typewriter);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--color-ink);
+  opacity: 0.55;
+  border-top: 1px dashed rgba(31, 26, 23, 0.2);
+}
+
+.attribution-line {
+  margin: 6px 0;
+  word-break: break-word;
+}
+
+.attribution-line a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.attribution-line a:hover {
+  opacity: 1;
+}
+
+/* Optional native cross-document view transition support */
+@view-transition {
+  navigation: auto;
+}
+

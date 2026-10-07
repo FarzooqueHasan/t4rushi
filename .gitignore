@@ -1,0 +1,6 @@
+.vercel
+scratch/
+/scratch/
+assets/*.zip
+verification/output_*
+verification/*.png
