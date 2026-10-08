@@ -408,10 +408,75 @@
     setProgress(0);
   }
 
+  // --------------------------------------------------------------------------
+  // 7. Apple Hello Effect — Hello Kitty Pink Gradient Stroke Draw Animation
+  // Based on https://framer.com/m/AppleHelloEffect-5Xzz.js@oxtIyxKcumiOBhJd8rdv
+  // --------------------------------------------------------------------------
+  function initAppleHelloAnimation() {
+    const path1 = document.querySelector('.prank-hello-path-1');
+    const path2 = document.querySelector('.prank-hello-path-2');
+    if (!path1 || !path2) return;
+
+    const len1 = path1.getTotalLength ? path1.getTotalLength() : 450;
+    const len2 = path2.getTotalLength ? path2.getTotalLength() : 1800;
+
+    path1.style.strokeDasharray = `${len1} ${len1}`;
+    path1.style.strokeDashoffset = len1;
+    path2.style.strokeDasharray = `${len2} ${len2}`;
+    path2.style.strokeDashoffset = len2;
+
+    function playAnimation() {
+      if (typeof gsap !== 'undefined') {
+        gsap.killTweensOf([path1, path2]);
+        path1.style.strokeDashoffset = len1;
+        path2.style.strokeDashoffset = len2;
+        path1.style.opacity = '1';
+        path2.style.opacity = '1';
+
+        const tl = gsap.timeline({ delay: 0.15 });
+        tl.to(path1, {
+          strokeDashoffset: 0,
+          duration: 0.85,
+          ease: 'power2.inOut'
+        });
+        tl.to(path2, {
+          strokeDashoffset: 0,
+          duration: 2.3,
+          ease: 'power2.inOut'
+        }, '-=0.15');
+      } else {
+        setTimeout(() => {
+          path1.style.transition = 'stroke-dashoffset 0.85s ease-in-out';
+          path1.style.strokeDashoffset = '0';
+          setTimeout(() => {
+            path2.style.transition = 'stroke-dashoffset 2.3s ease-in-out';
+            path2.style.strokeDashoffset = '0';
+          }, 700);
+        }, 150);
+      }
+    }
+
+    playAnimation();
+
+    const wrap = document.getElementById('prank-hello-wrap');
+    if (wrap) {
+      wrap.addEventListener('click', () => {
+        playAnimation();
+      });
+    }
+
+    window.replayHelloAnimation = playAnimation;
+  }
+
+  initAppleHelloAnimation();
+
   window.prankAPI = {
     setProgress: setProgress,
     triggerTransition: startPrankTransition,
-    setBurnProgress: setBurnProgress
+    setBurnProgress: setBurnProgress,
+    replayHello: () => {
+      if (window.replayHelloAnimation) window.replayHelloAnimation();
+    }
   };
 
   window.addEventListener('resize', () => {

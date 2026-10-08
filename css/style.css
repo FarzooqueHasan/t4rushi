@@ -107,6 +107,41 @@ html, body {
   gap: 1.25rem;
 }
 
+/* Apple Hello Effect — Hello Kitty Pink Gradient */
+.prank-hello-wrap {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: -0.25rem;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+}
+
+.prank-hello-wrap:hover {
+  transform: scale(1.05) rotate(-1.5deg);
+}
+
+.prank-hello-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 3px 10px rgba(255, 77, 136, 0.38));
+}
+
+.prank-hello-path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 480px) {
+  .prank-hello-wrap {
+    max-width: 260px;
+  }
+}
+
 /* Mascot Shape (Original SVG Bow) */
 .prank-mascot-wrap {
   width: 130px;
