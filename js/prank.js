@@ -86,7 +86,7 @@
 
   const DEFAULT_WISHES = [
     { name: 'Farzooque 🚀', msg: 'Happy Birthday φ (Golden Ration, Wave Function sab ho aap)', sticker: '🚀' },
-    { name: 'BlueWarrior 🌸', msg: 'May you be able to fly with ur degree, And get a lot of XP, Happy bday to you and may ur life be filled with glee And you shall conquer any problem and get victory, sticker: '✨' },
+    { name: 'BlueWarrior 🌸', msg: 'May you be able to fly with ur degree, And get a lot of XP, Happy bday to you and may ur life be filled with glee And you shall conquer any problem and get victory' sticker: '✨' }
   ];
 
   function getSavedWishes() {
