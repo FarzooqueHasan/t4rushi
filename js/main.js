@@ -102,7 +102,7 @@
   // --------------------------------------------------------------------------
   const canvas = document.getElementById('webgl-canvas');
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x05060B);
+  scene.background = new THREE.Color(0x070414);
   window.__debugScene = scene;
 
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
@@ -119,7 +119,7 @@
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxDPR));
-  renderer.setClearColor(0x05060B, 1.0);
+  renderer.setClearColor(0x070414, 1.0);
   window.renderer = renderer;
   window.scene = scene;
   window.camera = camera;
@@ -127,29 +127,30 @@
   window.maxDPR = maxDPR;
 
   // --------------------------------------------------------------------------
-  // Lighting: Exactly two lights per spec
-  // DirectionalLight #FF8A3D at intensity 0.4 rim-lighting from behind/above
-  // Neutral AmbientLight at intensity 0.15
+  // Lighting: Vibrant Multi-Point Cosmic Lighting
+  // Key light: Stellar Cyan #00F5D4
+  // Rim light: Neon Rose/Violet #FF5C8A
+  // Deep ambient: Cosmic Indigo #8A2BE2
   // --------------------------------------------------------------------------
-  const dirLight = new THREE.DirectionalLight(0xFF8A3D, 0.4);
-  dirLight.position.set(-10, 45, -310);
+  const dirLight = new THREE.DirectionalLight(0x00F5D4, 0.65);
+  dirLight.position.set(-20, 45, -310);
   scene.add(dirLight);
 
-  const ambLight = new THREE.AmbientLight(0xF4F1EA, 0.15);
+  const rimLight = new THREE.DirectionalLight(0xFF5C8A, 0.55);
+  rimLight.position.set(30, -15, -280);
+  scene.add(rimLight);
+
+  const ambLight = new THREE.AmbientLight(0x7B2CBF, 0.40);
   scene.add(ambLight);
 
   // --------------------------------------------------------------------------
-  // 4. Placeholder Boxes: Plain BoxGeometry, wireframe MeshBasicMaterial #FF8A3D
-  // Note: Beat 4 placeholder box is removed from scene graph (replaced by B2 Bomber)
+  // 4. Task 20 Item 6 & User Update 9: Beats 7 & 8 Photo Plane
+  // Photo of her: assets/tarushi-space-end.jpg (landscape 4:3)
+  // Thin luminous cyan/rose border + soft glow, spanning Beats 7 & 8 camera stations
   // --------------------------------------------------------------------------
-  // --------------------------------------------------------------------------
-  // 4. Task 20 Item 6: Beats 7 & 8 Photo Plane (Replacing Placeholder Boxes)
-  // Photo of her: assets/scrapbook/photo-hills.jpg (aspect ratio 3:4)
-  // Thin #FF8A3D border + soft glow, spanning Beats 7 & 8 camera stations
-  // --------------------------------------------------------------------------
-  const photoTexture = new THREE.TextureLoader().load('assets/scrapbook/photo-hills.jpg');
-  const photoWidth = 12.0;
-  const photoHeight = 16.0;
+  const photoTexture = new THREE.TextureLoader().load('assets/tarushi-space-end.jpg');
+  const photoWidth = 16.0;
+  const photoHeight = 12.0;
 
   const beat7_8_photoGroup = new THREE.Group();
   beat7_8_photoGroup.name = "beat7_8_photo";
@@ -163,9 +164,9 @@
   const photoMesh = new THREE.Mesh(new THREE.PlaneGeometry(photoWidth, photoHeight), photoMat);
   beat7_8_photoGroup.add(photoMesh);
 
-  // 2. Accent border plane behind photo: #FF8A3D
+  // 2. Accent border plane behind photo: #00F5D4
   const borderMat = new THREE.MeshBasicMaterial({
-    color: 0xFF8A3D,
+    color: 0x00F5D4,
     transparent: true,
     opacity: 0.95
   });
@@ -173,11 +174,11 @@
   borderMesh.position.z = -0.05;
   beat7_8_photoGroup.add(borderMesh);
 
-  // 3. Soft glow plane: #FF8A3D at low opacity
+  // 3. Soft glow plane: #9D4EDD at low opacity
   const glowMat = new THREE.MeshBasicMaterial({
-    color: 0xFF8A3D,
+    color: 0x9D4EDD,
     transparent: true,
-    opacity: 0.20
+    opacity: 0.30
   });
   const glowMesh = new THREE.Mesh(new THREE.PlaneGeometry(photoWidth + 2.5, photoHeight + 2.5), glowMat);
   glowMesh.position.z = -0.10;
@@ -196,14 +197,16 @@
   // --------------------------------------------------------------------------
   const gltfLoader = new THREE.GLTFLoader();
 
-  const starCount = 2500;
+  const starCount = 3500;
   const unwarpedPositions = new Float32Array(starCount * 3);
   const warpedPositions = new Float32Array(starCount * 3);
   const defaultColors = new Float32Array(starCount * 3);
   const tintedColors = new Float32Array(starCount * 3);
-  const cWhite = new THREE.Color(0xF4F1EA);
-  const cAccent = new THREE.Color(0xFF8A3D);
-  const cPink = new THREE.Color(0xFF5C8A);
+  const cWhite = new THREE.Color(0xFFFFFF);
+  const cCyan = new THREE.Color(0x00F5D4);
+  const cViolet = new THREE.Color(0x9D4EDD);
+  const cRose = new THREE.Color(0xFF70A6);
+  const cGold = new THREE.Color(0xFFD166);
 
   // Deterministic RNG for consistent, well-distributed starfield framing
   let starSeed = 4242;
@@ -217,8 +220,8 @@
 
   for (let i = 0; i < starCount; i++) {
     let x, y, z;
-    // Distribute ~700 stars in the background viewing cone behind and around the hole (d in [60, 140])
-    if (i < 700) {
+    // Distribute ~1000 stars in the background viewing cone behind and around the hole (d in [60, 140])
+    if (i < 1000) {
       const r = 60.0 + starRng() * 80.0; // r in [60, 140] -> lensing zone
       const angle = starRng() * Math.PI * 2.0;
       const spread = starRng() * 0.85;
@@ -241,10 +244,20 @@
     unwarpedPositions[i * 3 + 1] = y;
     unwarpedPositions[i * 3 + 2] = z;
 
-    // Task 20 Item 5: ~10% of stars shifted toward accent #FF8A3D
-    const isAccent = (starRng() < 0.10);
-    const starCol = isAccent ? cAccent : cWhite;
-    if (isAccent) accentStarCount++;
+    // Vibrant cosmic palette distribution: cyan, violet, rose, gold, star white
+    const roll = starRng();
+    let starCol = cWhite;
+    if (roll < 0.22) {
+      starCol = cCyan;
+    } else if (roll < 0.42) {
+      starCol = cViolet;
+    } else if (roll < 0.56) {
+      starCol = cRose;
+    } else if (roll < 0.70) {
+      starCol = cGold;
+    } else {
+      starCol = cWhite;
+    }
 
     defaultColors[i * 3] = starCol.r;
     defaultColors[i * 3 + 1] = starCol.g;
@@ -260,10 +273,10 @@
       x = newX;
       z = newZ;
 
-      // Tinted debug color: #FF5C8A for lensed stars
-      tintedColors[i * 3] = cPink.r;
-      tintedColors[i * 3 + 1] = cPink.g;
-      tintedColors[i * 3 + 2] = cPink.b;
+      // Tinted debug color: #FF70A6 for lensed stars
+      tintedColors[i * 3] = cRose.r;
+      tintedColors[i * 3 + 1] = cRose.g;
+      tintedColors[i * 3 + 2] = cRose.b;
     } else {
       // Non-lensed stars keep their assigned default color
       tintedColors[i * 3] = starCol.r;
@@ -439,9 +452,15 @@
     }
 
     void main() {
-      float n = fbm(vUv * 3.5);
-      float alpha = smoothstep(0.35, 0.75, n) * u_opacity;
-      gl_FragColor = vec4(u_color, alpha);
+      float n1 = fbm(vUv * 3.2);
+      float n2 = fbm(vUv * 5.8 + vec2(1.7, 3.2));
+      vec3 colViolet = vec3(0.55, 0.15, 0.85); // Cosmic violet #8C26D9
+      vec3 colCyan = vec3(0.0, 0.85, 0.80);   // Stellar cyan #00D9CC
+      vec3 colRose = vec3(0.95, 0.25, 0.55);   // Rose nebula #F2408C
+      vec3 cosmicColor = mix(colViolet, colCyan, n1);
+      cosmicColor = mix(cosmicColor, colRose, n2 * 0.5);
+      float alpha = smoothstep(0.32, 0.72, n1) * u_opacity;
+      gl_FragColor = vec4(cosmicColor, alpha);
     }
   `;
 
@@ -449,8 +468,8 @@
     vertexShader: hazeVertexShader,
     fragmentShader: hazeFragmentShader,
     uniforms: {
-      u_color: { value: new THREE.Color(0xFF8A3D) },
-      u_opacity: { value: 0.07 }
+      u_color: { value: new THREE.Color(0x9D4EDD) },
+      u_opacity: { value: 0.18 }
     },
     transparent: true,
     depthWrite: false,
@@ -540,30 +559,47 @@
     // 3. Center on local origin (0, 0, 0)
     bhRoot.position.sub(rawCenter);
 
+    // Enhance materials: Pitch-black void core and vibrant cosmic accretion disk
+    bhRoot.traverse((child) => {
+      if (child.isMesh) {
+        if (child.name.includes('center') || (child.material && child.material.name === 'black_hole_center')) {
+          // Pure pitch-black event horizon void
+          child.material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+          child.scale.set(1.2, 1.2, 1.2);
+          window.blackHoleCore = child;
+        } else if (child.material && (child.material.name.includes('ring') || child.material.name.includes('light'))) {
+          // Warm cosmic accretion disk with amber-gold and violet glow
+          if (child.material.emissive) {
+            child.material.emissive = new THREE.Color(0xFF8A3D);
+            child.material.emissiveIntensity = 0.8;
+          }
+        }
+      }
+    });
+
     const blackHoleGroup = new THREE.Group();
     blackHoleGroup.name = "black_hole_assembly";
     blackHoleGroup.add(bhRoot);
 
-    // 4. Uniform scale so widest span becomes exactly 80 world units (Task 20 Item 4 hero scale)
+    // 4. Uniform scale to 55 world units (optimal hero proportion matching orientation test)
     const widestSpan = Math.max(rawSize.x, rawSize.y, rawSize.z);
-    const targetSpan = 80.0;
+    const targetSpan = 55.0;
     const scaleFactor = targetSpan / widestSpan;
     blackHoleGroup.scale.setScalar(scaleFactor);
 
-    // 5. Position at Beat 1 origin (0, 0, 0)
+    // 5. Position at Beat 1 origin (0, 0, 0) and tilt accretion disk ~30° toward camera
     blackHoleGroup.position.set(0, 0, 0);
+    blackHoleGroup.rotation.set(-0.35, 0.20, -0.10);
 
-    // Optimize static black hole assembly: disable per-frame matrix recalculations
-    blackHoleGroup.matrixAutoUpdate = false;
-    blackHoleGroup.traverse((child) => {
-      child.matrixAutoUpdate = false;
-    });
+    // Properly compute local and world matrices with scale and rotation applied
+    bhRoot.updateMatrix();
+    blackHoleGroup.updateMatrix();
     blackHoleGroup.updateMatrixWorld(true);
 
     scene.add(blackHoleGroup);
 
-    console.log("[Black Hole] Old core, disk, and custom shader removed from scene.");
-    console.log("[Black Hole] Loaded via direct GLTFLoader path (KHR_materials_pbrSpecularGlossiness supported).");
+    console.log("[Black Hole] Model centered, pitch-black core enhanced, tilted ~30° toward camera.");
+    console.log(`[Black Hole] Kept groups scaled by ${scaleFactor.toFixed(6)} to ${targetSpan} units widest span.`);
     console.log(`[Black Hole] Planet node excluded. Kept groups centered on origin and scaled by ${scaleFactor.toFixed(6)} to ${targetSpan} units widest span.`);
 
     window.blackHoleReady = true;
@@ -579,8 +615,14 @@
   const beat1Caption = document.getElementById('beat1-caption');
   let lastBeat1CaptionOpacity = -1;
 
-  function updateBeat1Caption(p) {
+  function updateBeat1Caption(p, camOverride) {
     if (!beat1Caption) return;
+    if (camOverride && camOverride !== 'beat1' && camOverride !== 'beat1_lensing_closeup') {
+      beat1Caption.style.opacity = '0';
+      beat1Caption.style.visibility = 'hidden';
+      lastBeat1CaptionOpacity = 0.0;
+      return;
+    }
     let opacity = 0.0;
     if (p >= 0.0 && p <= 0.0719) {
       if (p < 0.02) {
@@ -616,6 +658,9 @@
   const beat4Caption = document.getElementById('beat4-caption');
   const beat5Caption = document.getElementById('beat5-caption');
   const beat6Caption = document.getElementById('beat6-caption');
+  const beat4Overlay = document.getElementById('beat4-caption-overlay');
+  const beat5Overlay = document.getElementById('beat5-caption-overlay');
+  const beat6Overlay = document.getElementById('beat6-caption-overlay');
 
   function updateAircraftCaptions(p, override) {
     // Beat 4 (active window ~0.4253 - 0.5893, station 4 at 0.48)
@@ -630,6 +675,10 @@
       }
       beat4Caption.style.opacity = op.toFixed(4);
       beat4Caption.style.visibility = op > 0.001 ? 'visible' : 'hidden';
+      if (beat4Overlay) {
+        beat4Overlay.style.opacity = op.toFixed(4);
+        beat4Overlay.style.visibility = op > 0.001 ? 'visible' : 'hidden';
+      }
     }
 
     // Beat 5 (active window ~0.5893 - 0.7543, station 5 at 0.65)
@@ -644,6 +693,10 @@
       }
       beat5Caption.style.opacity = op.toFixed(4);
       beat5Caption.style.visibility = op > 0.001 ? 'visible' : 'hidden';
+      if (beat5Overlay) {
+        beat5Overlay.style.opacity = op.toFixed(4);
+        beat5Overlay.style.visibility = op > 0.001 ? 'visible' : 'hidden';
+      }
     }
 
     // Beat 6 (active window ~0.7543 - 0.9050, station 6 at 0.83)
@@ -658,6 +711,10 @@
       }
       beat6Caption.style.opacity = op.toFixed(4);
       beat6Caption.style.visibility = op > 0.001 ? 'visible' : 'hidden';
+      if (beat6Overlay) {
+        beat6Overlay.style.opacity = op.toFixed(4);
+        beat6Overlay.style.visibility = op > 0.001 ? 'visible' : 'hidden';
+      }
     }
   }
   window.updateAircraftCaptions = updateAircraftCaptions;
@@ -961,18 +1018,9 @@
     b2RimLight.position.set(-50, 35, -310);
     scene.add(b2RimLight);
 
-    // EdgesGeometry outline pass: LineBasicMaterial #FF8A3D
-    const edgeMaterial = new THREE.LineBasicMaterial({
-      color: 0xFF8A3D,
-      linewidth: 1
-    });
-
     b2Aircraft.traverse(child => {
       if (child.isMesh && child.geometry) {
         child.material = b2BodyMaterial;
-        const edgesGeo = new THREE.EdgesGeometry(child.geometry, 28);
-        const edgesLine = new THREE.LineSegments(edgesGeo, edgeMaterial);
-        child.add(edgesLine);
       }
     });
 
@@ -995,15 +1043,9 @@
 
   // --------------------------------------------------------------------------
   // Task 11 & Task 20: Beat 5 — MiG-21 Bison (OUTPISTON, CC-BY-NC-SA-4.0)
-  // Stop overriding materials: Keep authored PBR materials & textures.
-  // Add EdgesGeometry(45) in #FF8A3D on top.
-  // Orientation: yaw adjusted to 135° (was 180° away from camera).
+  // Keep authored PBR materials & textures clean without wireframe clutter.
+  // Orientation: yaw adjusted to 135° so cockpit faces camera.
   // --------------------------------------------------------------------------
-  const mig21EdgeMaterial = new THREE.LineBasicMaterial({
-    color: 0xFF8A3D,
-    linewidth: 1.5
-  });
-
   const mig21AuthoredMaterials = [];
   window.mig21AuthoredMaterials = mig21AuthoredMaterials;
   window.fighterReady = false;
@@ -1012,28 +1054,18 @@
     const mig21Root = gltf.scene;
 
     // 1. Keep authored PBR materials & textures intact; collect for opacity fade
-    // plus EdgesGeometry outline with threshold angle 45
     mig21Root.traverse((child) => {
-      if (child.isMesh) {
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(m => {
-              m.transparent = true;
-              m.opacity = 0.0;
-              mig21AuthoredMaterials.push(m);
-            });
-          } else {
-            child.material.transparent = true;
-            child.material.opacity = 0.0;
-            mig21AuthoredMaterials.push(child.material);
-          }
-        }
-        try {
-          const edgesGeom = new THREE.EdgesGeometry(child.geometry, 45);
-          const edgeLine = new THREE.LineSegments(edgesGeom, mig21EdgeMaterial);
-          child.add(edgeLine);
-        } catch (e) {
-          console.warn('Could not generate edges for MiG-21 mesh', e);
+      if (child.isMesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(m => {
+            m.transparent = true;
+            m.opacity = 0.0;
+            mig21AuthoredMaterials.push(m);
+          });
+        } else {
+          child.material.transparent = true;
+          child.material.opacity = 0.0;
+          mig21AuthoredMaterials.push(child.material);
         }
       }
     });
@@ -1094,31 +1126,19 @@
   gltfLoader.load('models/f16/scene.gltf', (gltf) => {
     const f16Root = gltf.scene;
 
-    const edgeMat = new THREE.LineBasicMaterial({
-      color: 0xFF8A3D,
-      linewidth: 1.5
-    });
-
     f16Root.traverse((child) => {
-      if (child.isMesh) {
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(m => {
-              m.transparent = true;
-              m.opacity = 0.0;
-              f16AuthoredMaterials.push(m);
-            });
-          } else {
-            child.material.transparent = true;
-            child.material.opacity = 0.0;
-            f16AuthoredMaterials.push(child.material);
-          }
+      if (child.isMesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(m => {
+            m.transparent = true;
+            m.opacity = 0.0;
+            f16AuthoredMaterials.push(m);
+          });
+        } else {
+          child.material.transparent = true;
+          child.material.opacity = 0.0;
+          f16AuthoredMaterials.push(child.material);
         }
-        try {
-          const edgesGeom = new THREE.EdgesGeometry(child.geometry, 28);
-          const edges = new THREE.LineSegments(edgesGeom, edgeMat);
-          child.add(edges);
-        } catch (e) {}
       }
     });
 
@@ -1153,31 +1173,19 @@
   gltfLoader.load('models/mig35/scene.gltf', (gltf) => {
     const migRoot = gltf.scene;
 
-    const edgeMat = new THREE.LineBasicMaterial({
-      color: 0xFF8A3D,
-      linewidth: 1.5
-    });
-
     migRoot.traverse((child) => {
-      if (child.isMesh) {
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach(m => {
-              m.transparent = true;
-              m.opacity = 0.0;
-              mig35AuthoredMaterials.push(m);
-            });
-          } else {
-            child.material.transparent = true;
-            child.material.opacity = 0.0;
-            mig35AuthoredMaterials.push(child.material);
-          }
+      if (child.isMesh && child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(m => {
+            m.transparent = true;
+            m.opacity = 0.0;
+            mig35AuthoredMaterials.push(m);
+          });
+        } else {
+          child.material.transparent = true;
+          child.material.opacity = 0.0;
+          mig35AuthoredMaterials.push(child.material);
         }
-        try {
-          const edgesGeom = new THREE.EdgesGeometry(child.geometry, 28);
-          const edges = new THREE.LineSegments(edgesGeom, edgeMat);
-          child.add(edges);
-        } catch (e) {}
       }
     });
 
@@ -1296,11 +1304,6 @@
       metalness: 0.1
     });
 
-    const hangarEdgeMaterial = new THREE.LineBasicMaterial({
-      color: 0xFF8A3D,
-      linewidth: 1.5
-    });
-
     let totalVertices = 0;
     let totalTriangles = 0;
 
@@ -1319,12 +1322,6 @@
         child.material = hangarBodyMaterial;
         child.castShadow = false;
         child.receiveShadow = false;
-
-        try {
-          const edges = new THREE.EdgesGeometry(geom, 45);
-          const lineSegments = new THREE.LineSegments(edges, hangarEdgeMaterial);
-          child.add(lineSegments);
-        } catch (e) {}
       }
     });
 
@@ -1573,6 +1570,8 @@
       else if (camOverride === 'beat4_front' || camOverride === 'beat4_three_quarter') activeBeat = 4;
       else if (camOverride === 'beat5_front' || camOverride === 'beat5_three_quarter') activeBeat = 5;
       else if (camOverride === 'beat6') activeBeat = 6;
+      else if (camOverride === 'beat7') activeBeat = 7;
+      else if (camOverride === 'beat8') activeBeat = 8;
       else activeBeat = 1;
     } else {
       if (clampedProgress < 0.0719) activeBeat = 1;
@@ -1621,7 +1620,7 @@
     }
 
     updateAircraftOpacities(clampedProgress);
-    updateBeat1Caption(clampedProgress);
+    updateBeat1Caption(clampedProgress, camOverride);
     updateAircraftCaptions(clampedProgress, camOverride);
     updateStarfieldOpacity(clampedProgress);
     updateBeat2Warp(clampedProgress);
@@ -1678,6 +1677,16 @@
         camera.position.set(0, 16, -600);
         camera.lookAt(0, 8, -680);
         camera.fov = 45;
+      } else if (camOverride === 'beat7') {
+        // Exact Beat 7 camera position: (0, 5, -800) looking at (0, 3, -885), fov 40
+        camera.position.set(0, 5, -800);
+        camera.lookAt(0, 3, -885);
+        camera.fov = 40;
+      } else if (camOverride === 'beat8') {
+        // Exact Beat 8 camera position: (0, 2.8, -840) looking at (0, 2.8, -885), fov 34
+        camera.position.set(0, 2.8, -840);
+        camera.lookAt(0, 2.8, -885);
+        camera.fov = 34;
       }
       if (warpStreakTunnel && warpStreakTunnel.visible) {
         warpStreakTunnel.position.copy(camera.position);

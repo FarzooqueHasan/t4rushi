@@ -28,6 +28,18 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Eliminate background document scroll & layout shift while prank is active */
+html.prank-active, body.prank-active {
+  overflow: hidden !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+}
+
+html.prank-active #scroll-container,
+html.prank-active #handoff-scroll-pad {
+  display: none !important;
+}
+
 /* Fixed WebGL Canvas for 3D Camera Rig */
 #webgl-canvas {
   position: fixed;
@@ -69,6 +81,14 @@ html, body {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   background-color: var(--prank-bg);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.prank-layer::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .prank-content {
@@ -861,6 +881,7 @@ html, body {
   left: 0;
   width: 100vw;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -868,6 +889,8 @@ html, body {
   pointer-events: none;
   padding: 0 calc(24px + env(safe-area-inset-right, 0px)) 0 calc(24px + env(safe-area-inset-left, 0px));
   box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
 }
 
 .aircraft-caption {
@@ -882,6 +905,548 @@ html, body {
   visibility: hidden;
   user-select: none;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.9);
+}
+
+/* Space Week & AEROSS Theme Badge */
+.spaceweek-badge-wrap {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: center;
+}
+
+.spaceweek-badge {
+  display: inline-block;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: clamp(0.75rem, 1.4vw, 0.9rem);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #00F5D4;
+  background: rgba(0, 245, 212, 0.12);
+  border: 1px solid rgba(0, 245, 212, 0.45);
+  border-radius: 9999px;
+  padding: 0.35rem 1.1rem;
+  text-shadow: 0 0 12px rgba(0, 245, 212, 0.6);
+  box-shadow: 0 0 20px rgba(0, 245, 212, 0.2);
+  backdrop-filter: blur(8px);
+  animation: spaceweek-pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes spaceweek-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 15px rgba(0, 245, 212, 0.2); }
+  100% { transform: scale(1.03); box-shadow: 0 0 25px rgba(0, 245, 212, 0.45); }
+}
+
+/* ==========================================================================
+   Retro Pink Turntable / Record Player (Screen 3)
+   ========================================================================== */
+.turntable-card {
+  width: 100%;
+  max-width: 460px;
+  background: #FFF0F6;
+  border: 3px solid #FF5C8A;
+  border-radius: 28px;
+  box-shadow: 0 16px 40px rgba(255, 92, 138, 0.25), 0 4px 12px rgba(43, 20, 32, 0.08);
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.turntable-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.turntable-platter-area {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFE0ED;
+  border-radius: 50%;
+  border: 4px solid #FFB3D1;
+  box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.vinyl-disc {
+  width: 196px;
+  height: 196px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #242426 0%, #151516 40%, #202022 65%, #0F0F10 100%);
+  position: relative;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.vinyl-disc.spinning {
+  animation: spin-vinyl 2.5s linear infinite;
+}
+
+@keyframes spin-vinyl {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.vinyl-groove {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.groove-1 { width: 160px; height: 160px; }
+.groove-2 { width: 130px; height: 130px; }
+.groove-3 { width: 100px; height: 100px; }
+
+.vinyl-label {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #FF5C8A;
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fredoka', cursive, sans-serif;
+  text-align: center;
+  border: 2px solid #FFD1E8;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.vinyl-label-star {
+  font-size: 0.65rem;
+  line-height: 1;
+}
+
+.vinyl-label-title {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+}
+
+.vinyl-label-sub {
+  font-size: 0.45rem;
+  opacity: 0.9;
+  letter-spacing: 0.04em;
+}
+
+.vinyl-label-center {
+  width: 8px;
+  height: 8px;
+  background: #242426;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.tonearm-assembly {
+  position: absolute;
+  top: 10px;
+  right: -5px;
+  width: 45px;
+  height: 110px;
+  pointer-events: none;
+  transform-origin: 32px 14px;
+  transform: rotate(-18deg);
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 5;
+}
+
+.tonearm-assembly.active {
+  transform: rotate(18deg);
+}
+
+.tonearm-pivot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFB3D1, #FF5C8A);
+  border: 2px solid #2B1420;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.tonearm-arm {
+  position: absolute;
+  top: 18px;
+  right: 13px;
+  width: 5px;
+  height: 85px;
+  background: linear-gradient(to right, #CCCCCC, #FFFFFF, #999999);
+  border-radius: 3px;
+  border: 1px solid #2B1420;
+}
+
+.tonearm-cartridge {
+  position: absolute;
+  bottom: 0px;
+  right: 8px;
+  width: 14px;
+  height: 18px;
+  background: #2B1420;
+  border-radius: 3px;
+}
+
+.turntable-panel {
+  width: 100%;
+  text-align: center;
+}
+
+.turntable-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.turntable-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #999999;
+  border: 1px solid #2B1420;
+  transition: all 0.3s ease;
+}
+
+.turntable-led.active {
+  background: #00F5D4;
+  box-shadow: 0 0 10px #00F5D4;
+}
+
+.turntable-status-text {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 0.72rem;
+  color: #7A3C5B;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.turntable-song-title {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 1.15rem;
+  color: #2B1420;
+  margin: 0.15rem 0;
+}
+
+.turntable-song-desc {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.8rem;
+  color: #7A3C5B;
+  margin: 0 0 1rem 0;
+}
+
+.turntable-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.turntable-btn {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 0.82rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: 9999px;
+  border: 2px solid #2B1420;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.turntable-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(43, 20, 32, 0.15);
+}
+
+.play-btn {
+  background: #FF5C8A;
+  color: #FFFFFF;
+}
+
+.spotify-btn {
+  background: #1DB954;
+  color: #FFFFFF;
+  border-color: #1DB954;
+}
+
+/* ==========================================================================
+   Interactive Guestbook Modal Overlay
+   ========================================================================== */
+.guestbook-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.guestbook-modal.open {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.guestbook-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(43, 20, 32, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.guestbook-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #FF5C8A transparent;
+  background: #FFF5F9;
+  border: 3px solid #FF5C8A;
+  border-radius: 28px;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+  z-index: 2;
+  transform: scale(0.94);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.guestbook-card::-webkit-scrollbar {
+  width: 6px;
+}
+.guestbook-card::-webkit-scrollbar-thumb {
+  background: #FF5C8A;
+  border-radius: 4px;
+}
+
+.guestbook-modal.open .guestbook-card {
+  transform: scale(1);
+}
+
+.guestbook-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #2B1420;
+  background: #FFD1E8;
+  color: #2B1420;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.guestbook-close:hover {
+  transform: scale(1.1);
+  background: #FF5C8A;
+  color: #FFFFFF;
+}
+
+.guestbook-header {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.guestbook-badge {
+  display: inline-block;
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 0.72rem;
+  color: #FF5C8A;
+  background: #FFE0ED;
+  border: 1px solid #FFB3D1;
+  border-radius: 9999px;
+  padding: 0.2rem 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.guestbook-title {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 1.35rem;
+  color: #2B1420;
+  margin: 0.2rem 0;
+}
+
+.guestbook-subtitle {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.8rem;
+  color: #7A3C5B;
+  margin: 0;
+}
+
+.guestbook-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.guestbook-input-row {
+  width: 100%;
+}
+
+.guestbook-input, .guestbook-textarea {
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.9rem;
+  color: #2B1420;
+  background: #FFFFFF;
+  border: 2px solid #FFB3D1;
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.guestbook-input:focus, .guestbook-textarea:focus {
+  border-color: #FF5C8A;
+  box-shadow: 0 0 0 4px rgba(255, 92, 138, 0.2);
+}
+
+.guestbook-stickers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sticker-prompt {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 0.78rem;
+  color: #7A3C5B;
+}
+
+.sticker-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.sticker-chip {
+  background: #FFFFFF;
+  border: 2px solid #FFD1E8;
+  border-radius: 12px;
+  font-size: 1.15rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.sticker-chip:hover {
+  transform: scale(1.15);
+}
+
+.sticker-chip.active {
+  border-color: #FF5C8A;
+  background: #FFE0ED;
+  transform: scale(1.15);
+}
+
+.guestbook-submit-btn {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 0.95rem;
+  background: #FF5C8A;
+  color: #FFFFFF;
+  border: 2px solid #2B1420;
+  border-radius: 9999px;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(255, 92, 138, 0.35);
+  transition: transform 0.15s ease;
+}
+
+.guestbook-submit-btn:hover {
+  transform: translateY(-2px);
+  background: #FF4073;
+}
+
+.guestbook-entries-wrap {
+  border-top: 2px dashed #FFB3D1;
+  padding-top: 1.25rem;
+}
+
+.guestbook-entries-title {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 1rem;
+  color: #2B1420;
+  margin: 0 0 0.85rem 0;
+}
+
+.guestbook-entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.guestbook-entry {
+  background: #FFFFFF;
+  border: 1.5px solid #FFD1E8;
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  position: relative;
+  box-shadow: 0 2px 6px rgba(43, 20, 32, 0.05);
+}
+
+.guestbook-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.guestbook-entry-name {
+  font-family: 'Fredoka', cursive, sans-serif;
+  font-size: 0.88rem;
+  color: #2B1420;
+  font-weight: 600;
+}
+
+.guestbook-entry-sticker {
+  font-size: 1.1rem;
+}
+
+.guestbook-entry-msg {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.82rem;
+  color: #55253F;
+  line-height: 1.4;
+  margin: 0;
 }
 
 

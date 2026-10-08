@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="prank-active">
 
 <head>
   <meta charset="UTF-8">
@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body class="prank-active">
   <!-- Part 1 — The Prank Layer (Full-Viewport Scrollable Overlay sitting in front on page load) -->
   <div id="prank-layer" class="prank-layer">
     <!-- Prank Content Wrapper (receives grayscale filter on hold complete) -->
@@ -76,10 +76,9 @@
         <!-- Fake Visitor Counter -->
         <div class="prank-counter">you are visitor #000001 ~☆</div>
 
-        <!-- Fake Guestbook Button with Tooltip -->
+        <!-- Interactive Guestbook Button -->
         <div class="prank-guestbook-wrap">
           <button class="prank-guestbook-btn" id="guestbook-btn" type="button">sign guestbook ♡</button>
-          <div class="prank-tooltip" id="guestbook-tooltip">aw thanks!</div>
         </div>
 
         <!-- Scroll down indicator -->
@@ -135,22 +134,65 @@
         </div>
       </section>
 
-      <!-- Screen 3: Mixtape (Pink Version) -->
+      <!-- Screen 3: Mixtape (Pink Version) with Vinyl Record Player -->
       <section class="prank-screen prank-screen-mixtape" id="prank-mixtape">
         <div class="prank-section-header">
           <span class="prank-badge">MIXTAPE ♡</span>
           <h2 class="prank-subheading">what's on repeat ♫</h2>
         </div>
 
+        <!-- Retro Pink Turntable / Record Player -->
+        <div class="turntable-card" id="turntable-card">
+          <div class="turntable-inner">
+            <div class="turntable-platter-area">
+              <div class="vinyl-disc" id="vinyl-disc" title="Click to spin & play Happy Birthday!">
+                <div class="vinyl-groove groove-1"></div>
+                <div class="vinyl-groove groove-2"></div>
+                <div class="vinyl-groove groove-3"></div>
+                <div class="vinyl-label">
+                  <div class="vinyl-label-star">★</div>
+                  <div class="vinyl-label-title">TARUSHI</div>
+                  <div class="vinyl-label-sub">POOKIE BDAY</div>
+                  <div class="vinyl-label-center"></div>
+                </div>
+              </div>
+              <div class="tonearm-assembly" id="tonearm-assembly">
+                <div class="tonearm-pivot"></div>
+                <div class="tonearm-arm"></div>
+                <div class="tonearm-cartridge"></div>
+              </div>
+            </div>
+
+            <div class="turntable-panel">
+              <div class="turntable-status-row">
+                <span class="turntable-led" id="turntable-led"></span>
+                <span class="turntable-status-text" id="turntable-status-text">PAUSED · CLICK TO PLAY</span>
+              </div>
+              <h3 class="turntable-song-title">Happy Birthday ♡ (Pookie Song)</h3>
+              <p class="turntable-song-desc">sweet music-box chime melody specially synthesized for Tarushi 🌸</p>
+
+              <div class="turntable-actions">
+                <button type="button" class="turntable-btn play-btn" id="turntable-play-btn">
+                  <span id="play-btn-icon">▶</span> <span id="play-btn-label">PLAY POOKIE SONG</span>
+                </button>
+                <a href="https://open.spotify.com/user/314ipmyt62uzmajordk4fg3pwrmi" target="_blank" rel="noopener" class="turntable-btn spotify-btn">
+                  <span>HER SPOTIFY ↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIP Ticket Pass -->
         <div class="prank-ticket-card">
           <div class="prank-ticket-inner">
             <div class="prank-tape prank-tape-tc" aria-hidden="true"></div>
             <p class="prank-ticket-label">★ VIP PASS ★</p>
             <p class="prank-ticket-id">TARUSHI · ALL ACCESS</p>
             <a href="https://open.spotify.com/user/314ipmyt62uzmajordk4fg3pwrmi" target="_blank" rel="noopener" class="prank-spotify-btn">
-              HER SPOTIFY ↗
+              HER SPOTIFY PROFILE ↗
             </a>
-            <p class="prank-ticket-note">tap in to listen ♡</p>
+            <p class="prank-ticket-note">tap in to explore her music universe ♡</p>
           </div>
         </div>
       </section>
@@ -175,7 +217,7 @@
 
       <!-- Screen 5: Hold-to-Proceed Button as Final CTA -->
       <section class="prank-screen prank-screen-hold" id="prank-hold-screen">
-        <p class="prank-hold-prompt">ready for what's next? ♡</p>
+        <p class="prank-hold-prompt">Did you really think my design skill is this bad?</p>
         <div class="hold-container" id="hold-btn">
           <div class="ring-wrapper">
             <svg class="ring-svg" viewBox="0 0 120 120">
@@ -191,6 +233,48 @@
       <!-- Step 3: Punchline Centered Text -->
       <div class="punchline-overlay" id="punchline-text">
         did you really think my skills are this bad?
+      </div>
+    </div>
+
+    <!-- Interactive Guestbook Modal Overlay -->
+    <div id="prank-guestbook-modal" class="guestbook-modal" aria-hidden="true">
+      <div class="guestbook-backdrop" id="guestbook-backdrop"></div>
+      <div class="guestbook-card">
+        <button class="guestbook-close" id="guestbook-close" type="button" aria-label="Close guestbook">✕</button>
+        <div class="guestbook-header">
+          <span class="guestbook-badge">BIRTHDAY GUESTBOOK ♡</span>
+          <h3 class="guestbook-title">Leave a Wish for Tarushi ✨</h3>
+          <p class="guestbook-subtitle">sign her cute memory book before heading to the skies!</p>
+        </div>
+
+        <form id="guestbook-form" class="guestbook-form">
+          <div class="guestbook-input-row">
+            <input type="text" id="guestbook-name" class="guestbook-input" placeholder="Your name or nickname..." maxlength="30" required>
+          </div>
+          <div class="guestbook-input-row">
+            <textarea id="guestbook-msg" class="guestbook-textarea" placeholder="Write your sweet message or birthday wish..." rows="3" maxlength="200" required></textarea>
+          </div>
+          <div class="guestbook-stickers">
+            <span class="sticker-prompt">Pick a sticker:</span>
+            <div class="sticker-chips" id="sticker-chips">
+              <button type="button" class="sticker-chip active" data-sticker="🎂">🎂</button>
+              <button type="button" class="sticker-chip" data-sticker="💖">💖</button>
+              <button type="button" class="sticker-chip" data-sticker="✨">✨</button>
+              <button type="button" class="sticker-chip" data-sticker="🚀">🚀</button>
+              <button type="button" class="sticker-chip" data-sticker="🌸">🌸</button>
+              <button type="button" class="sticker-chip" data-sticker="🧸">🧸</button>
+              <button type="button" class="sticker-chip" data-sticker="🎀">🎀</button>
+            </div>
+          </div>
+          <button type="submit" class="guestbook-submit-btn">sign with love ♡</button>
+        </form>
+
+        <div class="guestbook-entries-wrap">
+          <h4 class="guestbook-entries-title">Recent Wishes 💌</h4>
+          <div class="guestbook-entries-list" id="guestbook-entries-list">
+            <!-- Entries injected via JS -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -223,13 +307,16 @@
 
   <!-- Task 20 Item 3: Aircraft Beats Caption Overlays (DOM text overlays on top of WebGL canvas) -->
   <div id="beat4-caption-overlay" class="aircraft-caption-overlay" aria-live="polite">
-    <p id="beat4-caption" class="aircraft-caption">you drew this before it existed.</p>
+    <p id="beat4-caption" class="aircraft-caption">you're built for the stealthiest, highest skies.</p>
   </div>
   <div id="beat5-caption-overlay" class="aircraft-caption-overlay" aria-live="polite">
-    <p id="beat5-caption" class="aircraft-caption">the one you'd actually want to fly.</p>
+    <p id="beat5-caption" class="aircraft-caption">you're the ace in every room — fearless and unmatched.</p>
   </div>
   <div id="beat6-caption-overlay" class="aircraft-caption-overlay" aria-live="polite">
-    <p id="beat6-caption" class="aircraft-caption">they're just here to clear your way.</p>
+    <p id="beat6-caption" class="aircraft-caption">you're born to lead the fleet — born to be in AEROSS.</p>
+    <div class="spaceweek-badge-wrap">
+      <span class="spaceweek-badge">✦ WORLD SPACE WEEK · BORN TO BE IN AEROSS ✦</span>
+    </div>
   </div>
 
   <!-- Beat 2 / Beat 3 Handoff Flash Overlay (Full-viewport DOM overlay, #F4F1EA) -->

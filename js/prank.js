@@ -71,19 +71,253 @@
   }
 
   // --------------------------------------------------------------------------
-  // 2. Guestbook Button & Tooltip
+  // 2. Interactive Guestbook Modal Logic
   // --------------------------------------------------------------------------
-  let tooltipTimeout = null;
-  if (guestbookBtn && guestbookTooltip) {
-    guestbookBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      guestbookTooltip.classList.add('active');
-      clearTimeout(tooltipTimeout);
-      tooltipTimeout = setTimeout(() => {
-        guestbookTooltip.classList.remove('active');
-      }, 1500);
+  const guestbookModal = document.getElementById('prank-guestbook-modal');
+  const guestbookBackdrop = document.getElementById('guestbook-backdrop');
+  const guestbookClose = document.getElementById('guestbook-close');
+  const guestbookForm = document.getElementById('guestbook-form');
+  const guestbookName = document.getElementById('guestbook-name');
+  const guestbookMsg = document.getElementById('guestbook-msg');
+  const guestbookList = document.getElementById('guestbook-entries-list');
+  const stickerChips = document.querySelectorAll('.sticker-chip');
+
+  let activeSticker = '🎂';
+
+  const DEFAULT_WISHES = [
+    { name: 'Shreya ✨', msg: 'Happy Birthday Queen!! Keep shining brighter than a supernova! 💖', sticker: '🎂' },
+    { name: 'Aryan 🚀', msg: 'To the coolest pilot in AEROSS, have the happiest 20th! Keep soaring high! ✈️', sticker: '🚀' },
+    { name: 'Ria 🌸', msg: 'Happy happy birthday Tarushi!! May this year bring endless adventures! ♡', sticker: '✨' },
+    { name: 'Kabir 🏀', msg: 'Court MVP and sweetest friend ever! Happy birthday Tarushi! 🏀🎉', sticker: '🧸' }
+  ];
+
+  function getSavedWishes() {
+    try {
+      const data = localStorage.getItem('tarushi_guestbook_wishes');
+      return data ? JSON.parse(data) : DEFAULT_WISHES;
+    } catch (_) {
+      return DEFAULT_WISHES;
+    }
+  }
+
+  function renderGuestbookEntries() {
+    if (!guestbookList) return;
+    const wishes = getSavedWishes();
+    guestbookList.innerHTML = '';
+    wishes.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'guestbook-entry';
+      card.innerHTML = `
+        <div class="guestbook-entry-header">
+          <span class="guestbook-entry-name">${escapeHtml(item.name)}</span>
+          <span class="guestbook-entry-sticker">${item.sticker || '💖'}</span>
+        </div>
+        <p class="guestbook-entry-msg">${escapeHtml(item.msg)}</p>
+      `;
+      guestbookList.appendChild(card);
     });
   }
+
+  function escapeHtml(str) {
+    return String(str || '').replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[m]);
+  }
+
+  function openGuestbook() {
+    if (!guestbookModal) return;
+    renderGuestbookEntries();
+    guestbookModal.classList.add('open');
+    guestbookModal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeGuestbook() {
+    if (!guestbookModal) return;
+    guestbookModal.classList.remove('open');
+    guestbookModal.setAttribute('aria-hidden', 'true');
+  }
+
+  if (guestbookBtn) {
+    guestbookBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openGuestbook();
+    });
+  }
+  if (guestbookClose) guestbookClose.addEventListener('click', closeGuestbook);
+  if (guestbookBackdrop) guestbookBackdrop.addEventListener('click', closeGuestbook);
+
+  stickerChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      stickerChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeSticker = chip.getAttribute('data-sticker') || '🎂';
+    });
+  });
+
+  if (guestbookForm) {
+    guestbookForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = (guestbookName.value || '').trim();
+      const msg = (guestbookMsg.value || '').trim();
+      if (!name || !msg) return;
+
+      const wishes = getSavedWishes();
+      wishes.unshift({ name, msg, sticker: activeSticker });
+      try {
+        localStorage.setItem('tarushi_guestbook_wishes', JSON.stringify(wishes));
+      } catch (_) {}
+
+      renderGuestbookEntries();
+      guestbookMsg.value = '';
+
+      // Cute burst animation
+      const submitBtn = guestbookForm.querySelector('.guestbook-submit-btn');
+      if (submitBtn) {
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Signed with Love! 💖';
+        setTimeout(() => { submitBtn.textContent = originalText; }, 1800);
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // 2B. Retro Pink Turntable / Record Player & Happy Birthday Web Audio Synth
+  // --------------------------------------------------------------------------
+  const vinylDisc = document.getElementById('vinyl-disc');
+  const tonearm = document.getElementById('tonearm-assembly');
+  const turntableLed = document.getElementById('turntable-led');
+  const turntableStatus = document.getElementById('turntable-status-text');
+  const turntablePlayBtn = document.getElementById('turntable-play-btn');
+  const playBtnIcon = document.getElementById('play-btn-icon');
+  const playBtnLabel = document.getElementById('play-btn-label');
+
+  let audioCtx = null;
+  let isMusicPlaying = false;
+  let audioTimerIds = [];
+
+  // Melody: Happy Birthday to You in C Major
+  // Note frequencies
+  const NOTES = {
+    G4: 392.00, A4: 440.00, B4: 493.88,
+    C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99
+  };
+
+  const BDAY_MELODY = [
+    // Happy Birthday to you
+    { note: 'G4', dur: 0.35, pause: 0.1 },
+    { note: 'G4', dur: 0.35, pause: 0.1 },
+    { note: 'A4', dur: 0.7, pause: 0.1 },
+    { note: 'G4', dur: 0.7, pause: 0.1 },
+    { note: 'C5', dur: 0.7, pause: 0.1 },
+    { note: 'B4', dur: 1.2, pause: 0.3 },
+    // Happy Birthday to you
+    { note: 'G4', dur: 0.35, pause: 0.1 },
+    { note: 'G4', dur: 0.35, pause: 0.1 },
+    { note: 'A4', dur: 0.7, pause: 0.1 },
+    { note: 'G4', dur: 0.7, pause: 0.1 },
+    { note: 'D5', dur: 0.7, pause: 0.1 },
+    { note: 'C5', dur: 1.2, pause: 0.3 },
+    // Happy Birthday dear Tarushi
+    { note: 'G4', dur: 0.35, pause: 0.1 },
+    { note: 'G4', dur: 0.35, pause: 0.1 },
+    { note: 'G5', dur: 0.7, pause: 0.1 },
+    { note: 'E5', dur: 0.7, pause: 0.1 },
+    { note: 'C5', dur: 0.7, pause: 0.1 },
+    { note: 'B4', dur: 0.7, pause: 0.1 },
+    { note: 'A4', dur: 1.2, pause: 0.3 },
+    // Happy Birthday to you
+    { note: 'F5', dur: 0.35, pause: 0.1 },
+    { note: 'F5', dur: 0.35, pause: 0.1 },
+    { note: 'E5', dur: 0.7, pause: 0.1 },
+    { note: 'C5', dur: 0.7, pause: 0.1 },
+    { note: 'D5', dur: 0.7, pause: 0.1 },
+    { note: 'C5', dur: 1.6, pause: 1.0 }
+  ];
+
+  function playTone(freq, duration, startTime) {
+    if (!audioCtx) return;
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    // Sweet celesta/music-box bell tones
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(freq, startTime);
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(freq * 2, startTime); // octave chime harmonic
+
+    // Warm envelope
+    gainNode.gain.setValueAtTime(0.0001, startTime);
+    gainNode.gain.linearRampToValueAtTime(0.28, startTime + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    osc1.start(startTime);
+    osc2.start(startTime);
+    osc1.stop(startTime + duration);
+    osc2.stop(startTime + duration);
+  }
+
+  function scheduleBdaySong() {
+    if (!isMusicPlaying) return;
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+
+    let now = audioCtx.currentTime + 0.1;
+    let totalTime = 0;
+
+    BDAY_MELODY.forEach(item => {
+      const freq = NOTES[item.note] || 440;
+      playTone(freq, item.dur, now + totalTime);
+      totalTime += item.dur + item.pause;
+    });
+
+    const loopTimer = setTimeout(() => {
+      if (isMusicPlaying) scheduleBdaySong();
+    }, totalTime * 1000);
+
+    audioTimerIds.push(loopTimer);
+  }
+
+  function stopBdaySong() {
+    isMusicPlaying = false;
+    audioTimerIds.forEach(id => clearTimeout(id));
+    audioTimerIds = [];
+    if (audioCtx && audioCtx.state === 'running') {
+      audioCtx.suspend();
+    }
+  }
+
+  function toggleMusic() {
+    if (isMusicPlaying) {
+      stopBdaySong();
+      if (vinylDisc) vinylDisc.classList.remove('spinning');
+      if (tonearm) tonearm.classList.remove('active');
+      if (turntableLed) turntableLed.classList.remove('active');
+      if (turntableStatus) turntableStatus.textContent = 'PAUSED · CLICK TO PLAY';
+      if (playBtnIcon) playBtnIcon.textContent = '▶';
+      if (playBtnLabel) playBtnLabel.textContent = 'PLAY POOKIE SONG';
+    } else {
+      isMusicPlaying = true;
+      scheduleBdaySong();
+      if (vinylDisc) vinylDisc.classList.add('spinning');
+      if (tonearm) tonearm.classList.add('active');
+      if (turntableLed) turntableLed.classList.add('active');
+      if (turntableStatus) turntableStatus.textContent = 'NOW PLAYING ♡ POOKIE SONG';
+      if (playBtnIcon) playBtnIcon.textContent = '❚❚';
+      if (playBtnLabel) playBtnLabel.textContent = 'PAUSE SONG';
+    }
+  }
+
+  if (turntablePlayBtn) turntablePlayBtn.addEventListener('click', toggleMusic);
+  if (vinylDisc) vinylDisc.addEventListener('click', toggleMusic);
 
   // --------------------------------------------------------------------------
   // 3. 2A Hold-to-Proceed Gesture Logic
@@ -352,6 +586,9 @@
         playBurn(() => {
           // Step 5: On completion, remove the Prank layer from the DOM entirely
           prankLayer.remove();
+          document.documentElement.classList.remove('prank-active');
+          document.body.classList.remove('prank-active');
+          if (window.ScrollTrigger) window.ScrollTrigger.refresh();
           console.log("prank-layer removed from DOM. Beat 1 active.");
         });
       }, 1200); // 1200ms hold of punchline text
@@ -404,6 +641,9 @@
     setBurnProgress(0.5);
   } else if (prankState === 'done') {
     prankLayer.remove();
+    document.documentElement.classList.remove('prank-active');
+    document.body.classList.remove('prank-active');
+    if (window.ScrollTrigger) window.ScrollTrigger.refresh();
   } else {
     setProgress(0);
   }
