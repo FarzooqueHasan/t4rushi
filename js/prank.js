@@ -366,7 +366,31 @@
 
   if (prankState === 'idle') {
     setProgress(0);
+  } else if (prankState === 'photobooth') {
+    setTimeout(() => {
+      const el = document.getElementById('prank-photobooth');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, 50);
+  } else if (prankState === 'mixtape') {
+    setTimeout(() => {
+      const el = document.getElementById('prank-mixtape');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, 50);
+  } else if (prankState === 'gameday') {
+    setTimeout(() => {
+      const el = document.getElementById('prank-gameday');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, 50);
+  } else if (prankState === 'hold') {
+    setTimeout(() => {
+      const el = document.getElementById('prank-hold-screen');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, 50);
   } else if (prankState === 'hold50') {
+    setTimeout(() => {
+      const el = document.getElementById('prank-hold-screen');
+      if (el) el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }, 50);
     setProgress(0.5);
   } else if (prankState === 'punchline') {
     setProgress(1.0);

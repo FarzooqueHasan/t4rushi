@@ -21,55 +21,152 @@
 </head>
 
 <body>
-  <!-- Part 1 — The Prank Layer (Full-Viewport Overlay sitting in front on page load) -->
+  <!-- Part 1 — The Prank Layer (Full-Viewport Scrollable Overlay sitting in front on page load) -->
   <div id="prank-layer" class="prank-layer">
     <!-- Prank Content Wrapper (receives grayscale filter on hold complete) -->
     <div id="prank-content" class="prank-content">
-      <!-- Original Mascot Shape: Rounded Bow in #FF5C8A with #2B1420 details -->
-      <div class="prank-mascot-wrap">
-        <svg class="prank-mascot-svg" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
-          <!-- Left Bow Loop -->
-          <path d="M 80 55 C 50 18, 10 28, 20 58 C 30 88, 70 72, 80 55 Z" fill="#FF5C8A" stroke="#2B1420"
-            stroke-width="4" stroke-linejoin="round" />
-          <!-- Right Bow Loop -->
-          <path d="M 80 55 C 110 18, 150 28, 140 58 C 130 88, 90 72, 80 55 Z" fill="#FF5C8A" stroke="#2B1420"
-            stroke-width="4" stroke-linejoin="round" />
-          <!-- Left Hanging Ribbon -->
-          <path d="M 72 60 C 60 82, 45 102, 35 108 C 50 98, 65 92, 75 70 Z" fill="#FF5C8A" stroke="#2B1420"
-            stroke-width="3" stroke-linejoin="round" />
-          <!-- Right Hanging Ribbon -->
-          <path d="M 88 60 C 100 82, 115 102, 125 108 C 110 98, 95 92, 85 70 Z" fill="#FF5C8A" stroke="#2B1420"
-            stroke-width="3" stroke-linejoin="round" />
-          <!-- Center Knot -->
-          <circle cx="80" cy="55" r="15" fill="#FF5C8A" stroke="#2B1420" stroke-width="4" />
-          <!-- Knot Highlight -->
-          <circle cx="76" cy="51" r="3.5" fill="#FFD1E8" />
-        </svg>
-      </div>
 
-      <!-- Heading: centered top third, Fredoka 600 -->
-      <h1 class="prank-heading">tarushi's cute corner ✨</h1>
-
-      <!-- Fake Visitor Counter -->
-      <div class="prank-counter">you are visitor #000001 ~☆</div>
-
-      <!-- Fake Guestbook Button with Tooltip -->
-      <div class="prank-guestbook-wrap">
-        <button class="prank-guestbook-btn" id="guestbook-btn" type="button">sign guestbook ♡</button>
-        <div class="prank-tooltip" id="guestbook-tooltip">aw thanks!</div>
-      </div>
-
-      <!-- 2A Hold-to-Proceed Button: Unmodified #FF8A3D / #F4F1EA colors, label updated -->
-      <div class="hold-container" id="hold-btn">
-        <div class="ring-wrapper">
-          <svg class="ring-svg" viewBox="0 0 120 120">
-            <circle class="ring-bg" cx="60" cy="60" r="50" />
-            <circle class="ring-fill" id="ring-progress" cx="60" cy="60" r="50" />
+      <!-- Screen 1: The Cute Cover -->
+      <section class="prank-screen prank-screen-cover" id="prank-cover">
+        <!-- Original Mascot Shape: Rounded Bow in #FF5C8A with #2B1420 details -->
+        <div class="prank-mascot-wrap">
+          <svg class="prank-mascot-svg" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+            <!-- Left Bow Loop -->
+            <path d="M 80 55 C 50 18, 10 28, 20 58 C 30 88, 70 72, 80 55 Z" fill="#FF5C8A" stroke="#2B1420"
+              stroke-width="4" stroke-linejoin="round" />
+            <!-- Right Bow Loop -->
+            <path d="M 80 55 C 110 18, 150 28, 140 58 C 130 88, 90 72, 80 55 Z" fill="#FF5C8A" stroke="#2B1420"
+              stroke-width="4" stroke-linejoin="round" />
+            <!-- Left Hanging Ribbon -->
+            <path d="M 72 60 C 60 82, 45 102, 35 108 C 50 98, 65 92, 75 70 Z" fill="#FF5C8A" stroke="#2B1420"
+              stroke-width="3" stroke-linejoin="round" />
+            <!-- Right Hanging Ribbon -->
+            <path d="M 88 60 C 100 82, 115 102, 125 108 C 110 98, 95 92, 85 70 Z" fill="#FF5C8A" stroke="#2B1420"
+              stroke-width="3" stroke-linejoin="round" />
+            <!-- Center Knot -->
+            <circle cx="80" cy="55" r="15" fill="#FF5C8A" stroke="#2B1420" stroke-width="4" />
+            <!-- Knot Highlight -->
+            <circle cx="76" cy="51" r="3.5" fill="#FFD1E8" />
           </svg>
-          <div class="flash-overlay" id="flash-overlay"></div>
         </div>
-        <span class="hold-label">HOLD FOR SURPRISE</span>
-      </div>
+
+        <!-- Heading: centered top third, Fredoka 600 -->
+        <h1 class="prank-heading">tarushi's cute corner ✨</h1>
+
+        <!-- Fake Visitor Counter -->
+        <div class="prank-counter">you are visitor #000001 ~☆</div>
+
+        <!-- Fake Guestbook Button with Tooltip -->
+        <div class="prank-guestbook-wrap">
+          <button class="prank-guestbook-btn" id="guestbook-btn" type="button">sign guestbook ♡</button>
+          <div class="prank-tooltip" id="guestbook-tooltip">aw thanks!</div>
+        </div>
+
+        <!-- Scroll down indicator -->
+        <div class="prank-scroll-hint">
+          <span class="prank-scroll-text">scroll for more cute things ♡</span>
+          <span class="prank-scroll-arrow">↓</span>
+        </div>
+      </section>
+
+      <!-- Screen 2: Photo Booth (Pink Version) -->
+      <section class="prank-screen prank-screen-photobooth" id="prank-photobooth">
+        <div class="prank-section-header">
+          <span class="prank-badge">PHOTO BOOTH ♡</span>
+          <h2 class="prank-subheading">little captured moments ~☆</h2>
+        </div>
+
+        <div class="prank-photos-grid">
+          <!-- Photo 1: Hills -->
+          <div class="prank-polaroid-item prank-polaroid-1">
+            <figure class="prank-polaroid-frame">
+              <div class="prank-tape prank-tape-tl" aria-hidden="true"></div>
+              <img src="assets/scrapbook/photo-hills.jpg" alt="Tarushi outdoors in the hills" loading="lazy">
+              <figcaption class="prank-caption">mountain air & quiet trails ✨</figcaption>
+            </figure>
+          </div>
+
+          <!-- Photo 2: Stairs -->
+          <div class="prank-polaroid-item prank-polaroid-2">
+            <figure class="prank-polaroid-frame">
+              <div class="prank-tape prank-tape-tr" aria-hidden="true"></div>
+              <img src="assets/scrapbook/photo-stairs.jpg" alt="Tarushi smiling on the steps" loading="lazy">
+              <figcaption class="prank-caption">Nirvana on the steps ❀</figcaption>
+            </figure>
+          </div>
+
+          <!-- Photo 3: Field -->
+          <div class="prank-polaroid-item prank-polaroid-3">
+            <figure class="prank-polaroid-frame">
+              <div class="prank-tape prank-tape-tc" aria-hidden="true"></div>
+              <img src="assets/scrapbook/photo-field.jpg" alt="Tarushi standing in a green field" loading="lazy">
+              <figcaption class="prank-caption">somewhere out in the green 🌿</figcaption>
+            </figure>
+          </div>
+
+          <!-- Photo 4: Door -->
+          <div class="prank-polaroid-item prank-polaroid-4">
+            <figure class="prank-polaroid-frame">
+              <div class="prank-tape prank-tape-br" aria-hidden="true"></div>
+              <img src="assets/scrapbook/photo-door.jpg" alt="Tarushi seated by the blue door" loading="lazy">
+              <figcaption class="prank-caption">by the blue door 🚪</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 3: Mixtape (Pink Version) -->
+      <section class="prank-screen prank-screen-mixtape" id="prank-mixtape">
+        <div class="prank-section-header">
+          <span class="prank-badge">MIXTAPE ♡</span>
+          <h2 class="prank-subheading">what's on repeat ♫</h2>
+        </div>
+
+        <div class="prank-ticket-card">
+          <div class="prank-ticket-inner">
+            <div class="prank-tape prank-tape-tc" aria-hidden="true"></div>
+            <p class="prank-ticket-label">★ VIP PASS ★</p>
+            <p class="prank-ticket-id">TARUSHI · ALL ACCESS</p>
+            <a href="https://open.spotify.com/user/314ipmyt62uzmajordk4fg3pwrmi" target="_blank" rel="noopener" class="prank-spotify-btn">
+              HER SPOTIFY ↗
+            </a>
+            <p class="prank-ticket-note">tap in to listen ♡</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Game Day (Pink Version) -->
+      <section class="prank-screen prank-screen-gameday" id="prank-gameday">
+        <div class="prank-section-header">
+          <span class="prank-badge">GAME DAY 🏀</span>
+          <h2 class="prank-subheading">court vibes ~☆</h2>
+        </div>
+
+        <div class="prank-gameday-card">
+          <div class="prank-gameday-inner">
+            <div class="prank-tape prank-tape-tr" aria-hidden="true"></div>
+            <p class="prank-gameday-title">GAME DAY · STATS INCOMING</p>
+            <p class="prank-gameday-stat">ROSTER: TARUSHI #26</p>
+            <p class="prank-gameday-stat">STATUS: PRACTICE IN PROGRESS</p>
+            <p class="prank-gameday-caption">court film loading soon 🏀</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 5: Hold-to-Proceed Button as Final CTA -->
+      <section class="prank-screen prank-screen-hold" id="prank-hold-screen">
+        <p class="prank-hold-prompt">ready for what's next? ♡</p>
+        <div class="hold-container" id="hold-btn">
+          <div class="ring-wrapper">
+            <svg class="ring-svg" viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="50" />
+              <circle class="ring-fill" id="ring-progress" cx="60" cy="60" r="50" />
+            </svg>
+            <div class="flash-overlay" id="flash-overlay"></div>
+          </div>
+          <span class="hold-label">HOLD FOR SURPRISE</span>
+        </div>
+      </section>
 
       <!-- Step 3: Punchline Centered Text -->
       <div class="punchline-overlay" id="punchline-text">
@@ -96,9 +193,23 @@
     <section class="chapter-section" id="beat-8"></section>
   </main>
 
+  <!-- Task 21: Extra scroll room so scrolling past beat 8 triggers onLeave naturally -->
+  <div id="handoff-scroll-pad" class="handoff-scroll-pad"></div>
+
   <!-- Beat 1 Caption Overlay (DOM text overlay on top of WebGL canvas) -->
   <div id="beat1-caption-overlay" class="beat1-caption-overlay" aria-live="polite">
     <p id="beat1-caption" class="beat1-caption">some people just pull everything toward them.</p>
+  </div>
+
+  <!-- Task 20 Item 3: Aircraft Beats Caption Overlays (DOM text overlays on top of WebGL canvas) -->
+  <div id="beat4-caption-overlay" class="aircraft-caption-overlay" aria-live="polite">
+    <p id="beat4-caption" class="aircraft-caption">you drew this before it existed.</p>
+  </div>
+  <div id="beat5-caption-overlay" class="aircraft-caption-overlay" aria-live="polite">
+    <p id="beat5-caption" class="aircraft-caption">the one you'd actually want to fly.</p>
+  </div>
+  <div id="beat6-caption-overlay" class="aircraft-caption-overlay" aria-live="polite">
+    <p id="beat6-caption" class="aircraft-caption">they're just here to clear your way.</p>
   </div>
 
   <!-- Beat 2 / Beat 3 Handoff Flash Overlay (Full-viewport DOM overlay, #F4F1EA) -->

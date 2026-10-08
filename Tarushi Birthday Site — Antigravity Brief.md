@@ -873,6 +873,143 @@ No change to Beat 1's visual design, the black hole's materials or scale, the st
 
 The profiler breakdown itself, not just a before/after number. Re-measure Beat 1 under the same mid-tier throttle profile Task 17 used, so the comparison is apples to apples. State plainly what the fix actually was and why the breakdown pointed there.
 
+## Task 19 for Antigravity — final task: fix, verify, ship
+
+Two prompts of runway left, so this is written to be the last task, not another link in the chain. Three parts: fix the one real regression from Task 18, a full ship-readiness pass across everything built so far, and actually getting it live. Everything explicitly out of scope at the bottom is out on purpose, not an oversight — don't spend remaining time on it.
+
+### Part 1 — fix Beat 3's regression
+
+Task 18's own numbers show Beat 3 went from `113.96ms` (`8.8fps`) to `199.09ms` (`5.0fps`) after the culling fix, mislabeled "stable" in that report when it's a 75% regression. Culling should only remove rendering work, so this is almost certainly the fix's own cost, not something it exposed. Prime suspect: the per-frame visibility-check branching now evaluated for 7 objects (`blackHole`, `b2Aircraft`, `fighterJet`, `f16Escort`, `mig35Escort`, `hangar`, placeholder boxes) every single frame, with multi-condition OR logic and string comparisons against `camOverride`. Cheapen this specifically: compute which beat is active once per frame as a single integer or enum, not re-evaluated range checks and string comparisons per object, then switch on that one value for all 7 visibility assignments. Profile Beat 3 before and after this specific change, same method and same throttle profile as Task 18, and confirm it's back at or better than `113.96ms` before moving on.
+
+### Part 2 — full ship-readiness pass
+
+One pass, both pages, both sizes (desktop 1440×900, phone 390×844):
+
+- Scroll the entire `index.html` sequence start to finish — Prank through the Beat 8 handoff — watching for anything visually broken, not just re-running existing per-beat checks in isolation. Things built in separate tasks have never been watched play through as one continuous take.
+- Open `scrapbook.html` directly (not just via the handoff) and confirm all five spreads, the cover, and the footer's five attribution lines render correctly cold.
+- Click every link that leaves the site (the Spotify tap-through, all five Sketchfab attribution links) and confirm they resolve, not just that the markup exists.
+- Re-check Beat 1 and Beat 6 frame times one more time with Part 1's fix in place, to confirm neither regressed again.
+
+### Part 3 — deploy
+
+Push both pages to Vercel as the actual live site, not just verified locally. Confirm the live URL loads cold (not from a cache primed by local dev), that the Beat 8 handoff's `scrapbook.html` navigation resolves correctly at the real deployed path, and that asset paths (the aircraft models, the hangar, the artwork images) all load over the real deployment rather than relying on local file paths that happen to work in dev. Report the live URL.
+
+### Explicitly out of scope — do not spend remaining time here
+
+No sound design. No real Game Day content — it stays the placeholder ticket from Task 16. No further visual polish anywhere (landing gear, extra beats, anything not already built). If something here turns up broken that isn't covered by Parts 1–3, fix it only if it's a genuine functional break (something doesn't load, a page is blank, a link is dead) — not a refinement.
+
+### Verification
+
+The Beat 3 before/after profiling numbers. Screenshots from the full-sequence watch-through in Part 2, specifically anything found broken. The live Vercel URL, confirmed working from a cold load.
+
+## Task 20 for Antigravity — 3D sequence overhaul
+
+Six changes, all touching the 3D sequence, bundled as one task. Each has its own verification — don't treat this as done until all six individually check out.
+
+### 1. Aircraft materials — real textures, not the flat override
+
+The dark-body-plus-edge-outline treatment was a deliberate palette-consistency choice, but it's reading as unfinished, not minimal. For F-16, MiG-35, and MiG-21: stop overriding their materials. Load and display each one's own authored PBR materials and textures as they shipped (the F-16 alone has four: plane body, glass, seat, pilot). Keep each aircraft's `EdgesGeometry` accent outline as an additional layer on top, not a replacement — it's the one visual thread tying every aircraft back to the rest of the site, so it stays, it just now sits over real detail instead of flat fill.
+
+The B2 is the one exception, and stays dark: it has no source textures at all (the Roblox OBJ never had a `.mtl`), and a matte, radar-absorbent-black finish is actually the authentic look for a real B2 anyway. Instead of textures, improve its material quality directly — raise `metalness` slightly and add a touch of environment/rim lighting so it reads as a deliberately dark, premium finish rather than a flat placeholder color.
+
+### 2. Orientation — face the camera, not away from it
+
+Every aircraft currently points its nose along the direction of travel, meaning the camera mostly sees them banking away rather than presenting themselves. Adjust yaw on each so more of the plan/front silhouette reads toward the camera, keeping the existing roll for dynamism. Starting points to iterate from, not final answers — render an orientation check at each beat's camera position after adjusting and tune by eye, the same discipline that fixed the original procedural jet's foreshortening problem:
+
+- B2 (Beat 4): try adding roughly `35°` of yaw on top of its current orientation.
+- MiG-21 (Beat 5): currently `rotation.y = Math.PI` (180°, dead away from camera) — try closer to `135°`.
+- F-16 / MiG-35 (Beat 6): try a modest yaw adjustment on each, in opposite directions so they read as converging toward the viewer rather than two parallel silhouettes.
+
+### 3. A quote per aircraft beat
+
+Beats 4, 5, and 6 have never had caption text — only Beats 1 and 7 do. Same DOM-overlay treatment as Beat 1's caption, same `#F4F1EA` color, centered in the lower third, fading in and holding for a few seconds of that beat's progress window the way Beat 1's does:
+
+- Beat 4 (B2): "you drew this before it existed."
+- Beat 5 (MiG-21): "the one you'd actually want to fly."
+- Beat 6 (formation): "they're just here to clear your way."
+
+Edit these inline in the doc if the wording isn't right — they're a first pass, not final.
+
+### 4. Black hole — re-check, don't just re-render
+
+"Doesn't feel like a black hole" needs a fresh look before guessing at a fix. Render Beat 1 at its current live state and actually assess it against reference: is the dark core reading as clearly distinct from the ring, is the ring filling enough of the frame to feel like the hero moment it's supposed to be? If it reads as small or distant, the first thing to try is scale — the current target is `55` world units; try `75`–`90` and see if that alone solves it before touching anything else about the model or its materials.
+
+### 5. Starfield — genuinely richer, not just more dots
+
+Current: 800 stars, 3 size/brightness tiers, round sprites. Push this further:
+
+- Increase count to roughly `2500`.
+- Introduce a small tinted fraction — about 10% of stars shifted toward the existing accent `#FF8A3D` instead of all being neutral `#F4F1EA` — for warmth and variety without adding a new color to the palette.
+- Add a very low-opacity background haze: a large, distant sphere or plane with the same `fbm()` noise function already reused three times elsewhere, driving soft nebula-like variation at low alpha, well behind the starfield itself.
+
+Keep the lensing warp exactly as it is — it works, this is purely a richness pass on top of it.
+
+### 6. Beats 7 and 8 — replace the placeholder boxes that were never actually replaced
+
+These two were missed across every earlier task — Beat 7 only ever got DOM text layered over its placeholder box, Beat 8 only got the handoff trigger. The boxes themselves are still there. Replace both with a single photo of her — propose the hills/travel photo from the cleared four (`photo-hills.jpg`) unless a different one is preferred, spanning both camera stations so it's present and growing as the camera moves from Beat 7 into Beat 8, right as "Tarushi" and "Happy Birthday" resolve.
+
+Treatment: the photo as a texture on a plane sized to its aspect ratio, framed with a thin `#FF8A3D` border (a second, slightly larger plane behind it in the accent color works simply), soft glow consistent with the rest of the site's language. Not wireframe — a photo doesn't read as a silhouette the way geometry does.
+
+### Explicitly not in scope
+
+No change to the camera rig, any aircraft's position, the hangar, the Prank layer, or the ScrapBook.
+
+### Verification
+
+For each of the six: a fresh screenshot at the relevant beat. For items 1 and 2 together: one Beat 4, one Beat 5, one Beat 6 screenshot showing the real materials and the new orientation at once, since they land on the same aircraft together.
+
+## Task 21 for Antigravity — fix the broken ScrapBook handoff
+
+The live site doesn't reach `scrapbook.html` at all. This is a functional break, not a style note — treat it as the priority item in whatever order these three tasks get worked.
+
+### Check the routing first — likely cause, not confirmed
+
+I tried to fetch `https://t4rushi.vercel.app/scrapbook.html` directly myself to narrow this down before writing the task, and couldn't — my fetch tool only allows URLs that already appeared in a prior result, and only the root was given to me. You can check this directly: load that URL in a real browser. If it 404s or doesn't resolve, this is a Vercel routing/build-output problem, not a bug in the handoff logic itself — `window.location.href = 'scrapbook.html'` (Task 14) assumes the file is served at that relative path on the live deployment, which static hosts don't always do by default without an explicit rewrite/routing config. If that's it, the fix is a `vercel.json` rewrite or confirming the build output structure actually preserves `scrapbook.html` at the root, not a change to the handoff code at all.
+
+### If the routing is fine, debug the trigger itself
+
+If `scrapbook.html` loads fine when visited directly, the problem is upstream — the `onLeave` trigger, the overlay fade, or the navigation call never firing. Scroll to the actual end on the live deployed site (not local dev) and check, in order: does `onLeave` fire at all (console log it), does the overlay opacity actually animate, does the `window.location.href` call execute. Narrow it to the specific one of those three that's failing rather than re-implementing all of it.
+
+### Explicitly not in scope
+
+No change to the overlay's color, timing, or design if it turns out those parts are fine — this is a functional fix, not a revisit of Task 14's choices.
+
+### Verification
+
+The live URL, scrolled start to finish, actually landing on the ScrapBook — not a local reproduction. State plainly which of the two causes above it turned out to be.
+
+## Task 22 for Antigravity — pink pookie gallery in the Prank
+
+Extends the Prank layer with real content before the kaboom, reusing material already built for the ScrapBook — but mirrored into the pink palette, and only the non-artwork spreads. Flight Log and Studio Pages (the sketches and paintings) are explicitly excluded, per the request — this is photos and the other lightweight content, not her art.
+
+### Where this changes the Prank's structure
+
+Currently the Prank is one static viewport: cover elements, then the hold button, then kaboom. This makes it scrollable instead: the existing cover (bow, heading, visitor counter, guestbook) stays as the first screen, then three new pink sections follow it, then the hold-to-proceed button moves to sit after them as the final call-to-action before kaboom — not on the first screen anymore.
+
+### Palette — the Prank's existing pink set, nothing new
+
+Same bounded three colors already established for this layer: background `#FFD1E8`, accent `#FF5C8A`, ink `#2B1420`. Same `Fredoka` font. Do not introduce the ScrapBook's kraft/amber palette here — the point is these feel like the same cute, pink world as the cover, not a reskinned ScrapBook.
+
+### Section 1 — Photo Booth, pink version
+
+The same four cleared photos (hills, stairs, field, door) as the ScrapBook's Photo Booth, restyled: pink-tinted polaroid frames, `#FF5C8A` tape at jaunty angles, handwritten-style captions in `Fredoka` instead of the ScrapBook's `Caveat`/`Special Elite` pairing.
+
+### Section 2 — Mixtape, pink version
+
+Same content as the ScrapBook's Mixtape — a tap-through to `https://open.spotify.com/user/314ipmyt62uzmajordk4fg3pwrmi` — restyled as a cute pink ticket instead of the backstage-pass treatment, same honesty rule as before: no fake player UI implying tracks that aren't there.
+
+### Section 3 — Game Day, pink version
+
+Same placeholder as the ScrapBook's — no real material exists yet — restyled pink: "game day · stats incoming" in the Prank's voice.
+
+### Explicitly not in scope
+
+No art/sketches anywhere in this gallery. No change to the ScrapBook's own versions of these sections — this is a separate, parallel set of content, not a move or a shared component. No change to the hold-button mechanics, the burn/dissolve shader, or anything past the kaboom.
+
+### Verification
+
+Screenshots scrolling through all four Prank screens in order (cover, photos, mixtape, game day, hold button) at both 1440×900 and 390×844. Confirm the hold-to-proceed and kaboom sequence still fires correctly now that it's not the first screen.
+
 ## Open items — what to add
 
 | Item | Needed for | Status |

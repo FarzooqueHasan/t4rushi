@@ -142,36 +142,67 @@
   // 4. Placeholder Boxes: Plain BoxGeometry, wireframe MeshBasicMaterial #FF8A3D
   // Note: Beat 4 placeholder box is removed from scene graph (replaced by B2 Bomber)
   // --------------------------------------------------------------------------
-  const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
-  const boxMaterial = new THREE.MeshBasicMaterial({
-    color: 0xFF8A3D,
-    wireframe: true
-  });
+  // --------------------------------------------------------------------------
+  // 4. Task 20 Item 6: Beats 7 & 8 Photo Plane (Replacing Placeholder Boxes)
+  // Photo of her: assets/scrapbook/photo-hills.jpg (aspect ratio 3:4)
+  // Thin #FF8A3D border + soft glow, spanning Beats 7 & 8 camera stations
+  // --------------------------------------------------------------------------
+  const photoTexture = new THREE.TextureLoader().load('assets/scrapbook/photo-hills.jpg');
+  const photoWidth = 12.0;
+  const photoHeight = 16.0;
 
-  const placeholderBoxes = [];
-  BEATS.forEach((beat) => {
-    if (beat.id <= 6) return;
-    const box = new THREE.Mesh(boxGeometry, boxMaterial);
-    box.position.copy(beat.boxPos);
-    box.name = `placeholder_box_beat_${beat.id}`;
-    box.visible = false;
-    scene.add(box);
-    placeholderBoxes.push(box);
+  const beat7_8_photoGroup = new THREE.Group();
+  beat7_8_photoGroup.name = "beat7_8_photo";
+
+  // 1. Front photo plane
+  const photoMat = new THREE.MeshBasicMaterial({
+    map: photoTexture,
+    transparent: true,
+    opacity: 1.0
   });
-  window.placeholderBoxes = placeholderBoxes;
+  const photoMesh = new THREE.Mesh(new THREE.PlaneGeometry(photoWidth, photoHeight), photoMat);
+  beat7_8_photoGroup.add(photoMesh);
+
+  // 2. Accent border plane behind photo: #FF8A3D
+  const borderMat = new THREE.MeshBasicMaterial({
+    color: 0xFF8A3D,
+    transparent: true,
+    opacity: 0.95
+  });
+  const borderMesh = new THREE.Mesh(new THREE.PlaneGeometry(photoWidth + 0.35, photoHeight + 0.35), borderMat);
+  borderMesh.position.z = -0.05;
+  beat7_8_photoGroup.add(borderMesh);
+
+  // 3. Soft glow plane: #FF8A3D at low opacity
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: 0xFF8A3D,
+    transparent: true,
+    opacity: 0.20
+  });
+  const glowMesh = new THREE.Mesh(new THREE.PlaneGeometry(photoWidth + 2.5, photoHeight + 2.5), glowMat);
+  glowMesh.position.z = -0.10;
+  beat7_8_photoGroup.add(glowMesh);
+
+  // Position at Beat 8 box coordinates (0, 2.8, -885) facing the incoming camera along Z
+  beat7_8_photoGroup.position.set(0, 2.8, -885);
+  beat7_8_photoGroup.visible = false;
+  scene.add(beat7_8_photoGroup);
+  window.beat7_8_photo = beat7_8_photoGroup;
+  window.placeholderBoxes = [beat7_8_photoGroup];
 
   // --------------------------------------------------------------------------
-  // Beat 1: Starfield with generation-time Lensing Warp (Preserved from Task 10)
+  // Beat 1: Starfield with generation-time Lensing Warp & Background Haze
+  // Task 20 Item 5: 2500 stars, ~10% tinted #FF8A3D, distant fbm() haze
   // --------------------------------------------------------------------------
   const gltfLoader = new THREE.GLTFLoader();
 
-  // 2 & 3. Starfield with generation-time Lensing Warp
-  const starCount = 800;
+  const starCount = 2500;
   const unwarpedPositions = new Float32Array(starCount * 3);
   const warpedPositions = new Float32Array(starCount * 3);
   const defaultColors = new Float32Array(starCount * 3);
   const tintedColors = new Float32Array(starCount * 3);
   const cWhite = new THREE.Color(0xF4F1EA);
+  const cAccent = new THREE.Color(0xFF8A3D);
   const cPink = new THREE.Color(0xFF5C8A);
 
   // Deterministic RNG for consistent, well-distributed starfield framing
@@ -182,23 +213,24 @@
   }
 
   let lensedStarCount = 0;
+  let accentStarCount = 0;
+
   for (let i = 0; i < starCount; i++) {
     let x, y, z;
-    // Distribute ~320 stars in the background viewing cone behind and around the hole (d in [60, 120])
-    // This ensures the lensing warp forms a clearly visible curved arc around the event horizon core
-    if (i < 320) {
-      const r = 60.0 + starRng() * 60.0; // r in [60, 120] -> lensing zone
+    // Distribute ~700 stars in the background viewing cone behind and around the hole (d in [60, 140])
+    if (i < 700) {
+      const r = 60.0 + starRng() * 80.0; // r in [60, 140] -> lensing zone
       const angle = starRng() * Math.PI * 2.0;
-      const spread = starRng() * 0.75;
+      const spread = starRng() * 0.85;
       x = Math.cos(angle) * r * spread;
       y = Math.sin(angle) * r * spread * 0.85;
       z = -Math.sqrt(Math.max(1.0, r * r - x * x - y * y)); // Behind the hole (Z < 0)
     } else {
-      // General spherical shell distribution [60, 600]
+      // General spherical shell distribution [60, 650]
       const u = starRng() * 2.0 - 1.0;
       const th = starRng() * Math.PI * 2.0;
       const s = Math.sqrt(Math.max(0.0, 1.0 - u * u));
-      const r = 60.0 + starRng() * 540.0;
+      const r = 60.0 + starRng() * 590.0;
       x = s * Math.cos(th) * r;
       y = s * Math.sin(th) * r;
       z = u * r;
@@ -209,10 +241,14 @@
     unwarpedPositions[i * 3 + 1] = y;
     unwarpedPositions[i * 3 + 2] = z;
 
-    // Default star color: #F4F1EA
-    defaultColors[i * 3] = cWhite.r;
-    defaultColors[i * 3 + 1] = cWhite.g;
-    defaultColors[i * 3 + 2] = cWhite.b;
+    // Task 20 Item 5: ~10% of stars shifted toward accent #FF8A3D
+    const isAccent = (starRng() < 0.10);
+    const starCol = isAccent ? cAccent : cWhite;
+    if (isAccent) accentStarCount++;
+
+    defaultColors[i * 3] = starCol.r;
+    defaultColors[i * 3 + 1] = starCol.g;
+    defaultColors[i * 3 + 2] = starCol.b;
 
     // Lensing warp: applied once, at generation time, to each star's position
     const d = Math.sqrt(x * x + y * y + z * z);
@@ -229,10 +265,10 @@
       tintedColors[i * 3 + 1] = cPink.g;
       tintedColors[i * 3 + 2] = cPink.b;
     } else {
-      // Non-lensed stars remain #F4F1EA
-      tintedColors[i * 3] = cWhite.r;
-      tintedColors[i * 3 + 1] = cWhite.g;
-      tintedColors[i * 3 + 2] = cWhite.b;
+      // Non-lensed stars keep their assigned default color
+      tintedColors[i * 3] = starCol.r;
+      tintedColors[i * 3 + 1] = starCol.g;
+      tintedColors[i * 3 + 2] = starCol.b;
     }
 
     warpedPositions[i * 3] = x;
@@ -240,12 +276,7 @@
     warpedPositions[i * 3 + 2] = z;
   }
 
-  // --------------------------------------------------------------------------
-  // Fix 1 & Task 10 Starfield Correction:
-  // - 64x64 CanvasTexture radial gradient for soft round falloff
-  // - 3 layers with weighted shares: Dim 60%, Mid 30%, Bright 10%
-  // - PointsMaterial({ map: starSprite, color: 0xF4F1EA, size, opacity, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true })
-  // --------------------------------------------------------------------------
+  // Soft round star sprite
   const starCanvas = document.createElement('canvas');
   starCanvas.width = 64;
   starCanvas.height = 64;
@@ -259,7 +290,7 @@
   starCtx.fillRect(0, 0, 64, 64);
   const starSprite = new THREE.CanvasTexture(starCanvas);
 
-  // Partition the 800 stars into 3 weighted layers
+  // Partition the 2500 stars into 3 weighted layers
   const layerConfigs = [
     { name: 'dim', share: 0.60, size: 1.0, baseOpacity: 0.55, indices: [] },
     { name: 'mid', share: 0.30, size: 1.8, baseOpacity: 0.80, indices: [] },
@@ -303,7 +334,8 @@
 
     const mat = new THREE.PointsMaterial({
       map: starSprite,
-      color: 0xF4F1EA,
+      color: 0xffffff,
+      vertexColors: true,
       size: cfg.size,
       opacity: cfg.baseOpacity,
       transparent: true,
@@ -331,13 +363,13 @@
     };
   });
 
-  // Provide full 800-star geometry & material properties on starfieldGroup for backward compatibility
+  // Backward compatibility full star geometry
   const fullStarGeom = new THREE.BufferGeometry();
   fullStarGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(warpedPositions), 3));
   fullStarGeom.setAttribute('color', new THREE.BufferAttribute(new Float32Array(defaultColors), 3));
   starfieldGroup.geometry = fullStarGeom;
   starfieldGroup.material = {
-    color: new THREE.Color(0xF4F1EA),
+    color: new THREE.Color(0xffffff),
     size: 1.5,
     vertexColors: true,
     map: starSprite
@@ -351,6 +383,85 @@
   window.warpedStarPositions = warpedPositions;
   window.defaultStarColors = defaultColors;
   window.tintedStarColors = tintedColors;
+
+  // --------------------------------------------------------------------------
+  // Task 20 Item 5: Low-opacity Background Nebula Haze (behind starfield)
+  // Reuses snoise() & fbm() at very low alpha (0.07) for soft nebula-like variation
+  // --------------------------------------------------------------------------
+  const hazeVertexShader = `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `;
+  const hazeFragmentShader = `
+    precision highp float;
+    varying vec2 vUv;
+    uniform vec3 u_color;
+    uniform float u_opacity;
+
+    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+    vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+    float snoise(vec2 v) {
+      const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+      vec2 i  = floor(v + dot(v, C.yy) );
+      vec2 x0 = v -   i + dot(i, C.xx);
+      vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+      vec4 x12 = x0.xyxy + C.xxzz;
+      x12.xy -= i1;
+      i = mod289(i);
+      vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+      vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+      m = m*m; m = m*m;
+      vec3 x = 2.0 * fract(p * C.www) - 1.0;
+      vec3 h = abs(x) - 0.5;
+      vec3 ox = floor(x + 0.5);
+      vec3 a0 = x - ox;
+      m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+      vec3 g;
+      g.x  = a0.x  * x0.x  + h.x  * x0.y;
+      g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+      return 130.0 * dot(m, g);
+    }
+
+    float fbm(vec2 uv) {
+      float total = 0.0;
+      float amp = 0.5;
+      for (int i = 0; i < 4; i++) {
+        total += snoise(uv) * amp;
+        uv *= 2.05;
+        amp *= 0.5;
+      }
+      return total * 0.5 + 0.5;
+    }
+
+    void main() {
+      float n = fbm(vUv * 3.5);
+      float alpha = smoothstep(0.35, 0.75, n) * u_opacity;
+      gl_FragColor = vec4(u_color, alpha);
+    }
+  `;
+
+  const hazeMaterial = new THREE.ShaderMaterial({
+    vertexShader: hazeVertexShader,
+    fragmentShader: hazeFragmentShader,
+    uniforms: {
+      u_color: { value: new THREE.Color(0xFF8A3D) },
+      u_opacity: { value: 0.07 }
+    },
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+
+  const hazeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), hazeMaterial);
+  hazeMesh.position.set(0, 0, -450);
+  hazeMesh.name = "starfield_haze";
+  scene.add(hazeMesh);
+  window.starfieldHaze = hazeMesh;
 
   window.setStarfieldLensing = function(enabled) {
     const fullPosAttr = fullStarGeom.attributes.position;
@@ -373,9 +484,6 @@
       const colAttr = l.geometry.attributes.color;
       colAttr.copyArray(enabled ? l.tintedColors : l.defaultColors);
       colAttr.needsUpdate = true;
-      l.material.vertexColors = enabled;
-      l.material.color.set(enabled ? 0xffffff : 0xF4F1EA);
-      l.material.needsUpdate = true;
     });
   };
 
@@ -436,9 +544,9 @@
     blackHoleGroup.name = "black_hole_assembly";
     blackHoleGroup.add(bhRoot);
 
-    // 4. Uniform scale so widest span becomes exactly 55 world units
+    // 4. Uniform scale so widest span becomes exactly 80 world units (Task 20 Item 4 hero scale)
     const widestSpan = Math.max(rawSize.x, rawSize.y, rawSize.z);
-    const targetSpan = 55.0;
+    const targetSpan = 80.0;
     const scaleFactor = targetSpan / widestSpan;
     blackHoleGroup.scale.setScalar(scaleFactor);
 
@@ -498,6 +606,61 @@
       text: beat1Caption ? beat1Caption.innerText : ''
     };
   };
+
+  // --------------------------------------------------------------------------
+  // Task 20 Item 3: Aircraft Beats Captions (Beats 4, 5, 6)
+  // Beat 4 (B2): "you drew this before it existed."
+  // Beat 5 (MiG-21): "the one you'd actually want to fly."
+  // Beat 6 (Formation): "they're just here to clear your way."
+  // --------------------------------------------------------------------------
+  const beat4Caption = document.getElementById('beat4-caption');
+  const beat5Caption = document.getElementById('beat5-caption');
+  const beat6Caption = document.getElementById('beat6-caption');
+
+  function updateAircraftCaptions(p, override) {
+    // Beat 4 (active window ~0.4253 - 0.5893, station 4 at 0.48)
+    if (beat4Caption) {
+      let op = 0.0;
+      if (override === 'beat4_front' || override === 'beat4_three_quarter') {
+        op = 1.0;
+      } else if (p >= 0.43 && p <= 0.58) {
+        if (p < 0.46) op = (p - 0.43) / (0.46 - 0.43);
+        else if (p <= 0.53) op = 1.0;
+        else op = 1.0 - (p - 0.53) / (0.58 - 0.53);
+      }
+      beat4Caption.style.opacity = op.toFixed(4);
+      beat4Caption.style.visibility = op > 0.001 ? 'visible' : 'hidden';
+    }
+
+    // Beat 5 (active window ~0.5893 - 0.7543, station 5 at 0.65)
+    if (beat5Caption) {
+      let op = 0.0;
+      if (override === 'beat5_front' || override === 'beat5_three_quarter') {
+        op = 1.0;
+      } else if (p >= 0.59 && p <= 0.74) {
+        if (p < 0.62) op = (p - 0.59) / (0.62 - 0.59);
+        else if (p <= 0.69) op = 1.0;
+        else op = 1.0 - (p - 0.69) / (0.74 - 0.69);
+      }
+      beat5Caption.style.opacity = op.toFixed(4);
+      beat5Caption.style.visibility = op > 0.001 ? 'visible' : 'hidden';
+    }
+
+    // Beat 6 (active window ~0.7543 - 0.9050, station 6 at 0.83)
+    if (beat6Caption) {
+      let op = 0.0;
+      if (override === 'beat6') {
+        op = 1.0;
+      } else if (p >= 0.76 && p <= 0.90) {
+        if (p < 0.79) op = (p - 0.76) / (0.79 - 0.76);
+        else if (p <= 0.86) op = 1.0;
+        else op = 1.0 - (p - 0.86) / (0.90 - 0.86);
+      }
+      beat6Caption.style.opacity = op.toFixed(4);
+      beat6Caption.style.visibility = op > 0.001 ? 'visible' : 'hidden';
+    }
+  }
+  window.updateAircraftCaptions = updateAircraftCaptions;
 
   // --------------------------------------------------------------------------
   // Task 13: Beat 2 — Warp Streak Tunnel (Real range 0.0719–0.2201)
@@ -783,14 +946,20 @@
 
     console.log(`[B2 Loader] Measured wingspan: ${measuredWingspan.toFixed(2)} units. Applied uniform scaleFactor: ${scaleFactor.toFixed(5)} -> exact ${targetWingspan} world units.`);
 
-    // Materials: MeshStandardMaterial #05060B, roughness 0.6, metalness 0.1, transparent: true
+    // Materials: MeshStandardMaterial #0d0f14, roughness 0.48, metalness 0.35, transparent: true
+    // Premium matte radar-absorbent-black finish per Task 20 Item 1
     b2BodyMaterial = new THREE.MeshStandardMaterial({
-      color: 0x05060B,
-      roughness: 0.6,
-      metalness: 0.1,
+      color: 0x0d0f14,
+      roughness: 0.48,
+      metalness: 0.35,
       transparent: true,
       opacity: 0.0
     });
+
+    // Dedicated subtle rim lighting for B2 stealth surfaces
+    const b2RimLight = new THREE.DirectionalLight(0x88AACC, 0.45);
+    b2RimLight.position.set(-50, 35, -310);
+    scene.add(b2RimLight);
 
     // EdgesGeometry outline pass: LineBasicMaterial #FF8A3D
     const edgeMaterial = new THREE.LineBasicMaterial({
@@ -811,13 +980,12 @@
     // Position at Beat 4's placeholder coordinates: (-10, 16, -350)
     b2Aircraft.position.set(-10, 16, -350);
 
-    // Orientation:
-    // Verified from top-down & side renders: nose already points towards local -Z (0 rad Y rotation).
-    // Roll 20° about Z for the banking look.
-    b2Aircraft.rotation.set(0, 0, THREE.MathUtils.degToRad(20));
+    // Orientation (Task 20 Item 2):
+    // Add 35° yaw on top of current orientation so plan/front silhouette reads toward camera, keep 20° Z roll:
+    b2Aircraft.rotation.set(0, THREE.MathUtils.degToRad(35), THREE.MathUtils.degToRad(20));
 
     scene.add(b2Aircraft);
-    console.log("[B2 Loader] Placed B2 Bomber at Beat 4 coordinates (-10, 16, -350) with 20° Z roll.");
+    console.log("[B2 Loader] Placed B2 Bomber at Beat 4 coordinates (-10, 16, -350) with 35° yaw and 20° Z roll.");
 
     window.b2Ready = true;
     window.b2Aircraft = b2Aircraft;
@@ -826,47 +994,47 @@
   });
 
   // --------------------------------------------------------------------------
-  // Task 11: Beat 5 — MiG-21 Bison (OUTPISTON, CC-BY-NC-SA-4.0)
-  // Replaces hand-built procedural jet.
-  // Normalized: Nose to local -Z, Up to local +Y, Wingspan 16.0 world units along X.
-  // Placement: Position (12, 12, -495), rotation.y = degToRad(230), rotation.z = degToRad(15).
-  // Reveal: body opacity 0 below 0.5893, ramps 0->1 across 0.5893–0.6443, holds from there.
+  // Task 11 & Task 20: Beat 5 — MiG-21 Bison (OUTPISTON, CC-BY-NC-SA-4.0)
+  // Stop overriding materials: Keep authored PBR materials & textures.
+  // Add EdgesGeometry(45) in #FF8A3D on top.
+  // Orientation: yaw adjusted to 135° (was 180° away from camera).
   // --------------------------------------------------------------------------
-  fighterBodyMaterial = new THREE.MeshStandardMaterial({
-    color: 0x05060B,
-    roughness: 0.6,
-    metalness: 0.1,
-    transparent: true,
-    opacity: 0.0
-  });
-
   const mig21EdgeMaterial = new THREE.LineBasicMaterial({
     color: 0xFF8A3D,
     linewidth: 1.5
   });
 
+  const mig21AuthoredMaterials = [];
+  window.mig21AuthoredMaterials = mig21AuthoredMaterials;
   window.fighterReady = false;
 
   gltfLoader.load('models/mig21/scene.gltf', (gltf) => {
     const mig21Root = gltf.scene;
 
-    // 1. Material override: MeshStandardMaterial (#05060B, roughness 0.6, metalness 0.1)
-    // plus EdgesGeometry outline with threshold angle 45 to prevent visual clutter
-    const meshes = [];
+    // 1. Keep authored PBR materials & textures intact; collect for opacity fade
+    // plus EdgesGeometry outline with threshold angle 45
     mig21Root.traverse((child) => {
       if (child.isMesh) {
-        child.material = fighterBodyMaterial;
-        meshes.push(child);
-      }
-    });
-
-    meshes.forEach((mesh) => {
-      try {
-        const edgesGeom = new THREE.EdgesGeometry(mesh.geometry, 45);
-        const edgeLine = new THREE.LineSegments(edgesGeom, mig21EdgeMaterial);
-        mesh.add(edgeLine);
-      } catch (e) {
-        console.warn('Could not generate edges for MiG-21 mesh', e);
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(m => {
+              m.transparent = true;
+              m.opacity = 0.0;
+              mig21AuthoredMaterials.push(m);
+            });
+          } else {
+            child.material.transparent = true;
+            child.material.opacity = 0.0;
+            mig21AuthoredMaterials.push(child.material);
+          }
+        }
+        try {
+          const edgesGeom = new THREE.EdgesGeometry(child.geometry, 45);
+          const edgeLine = new THREE.LineSegments(edgesGeom, mig21EdgeMaterial);
+          child.add(edgeLine);
+        } catch (e) {
+          console.warn('Could not generate edges for MiG-21 mesh', e);
+        }
       }
     });
 
@@ -879,9 +1047,9 @@
 
     mig21Root.position.sub(rawCenter);
 
-    // 3. Orientation: Identified length axis is Z (raw size [7.15, 3.65, 15.37]).
-    // Nose points toward +Z in raw import. Rotate 180° (Math.PI) around Y so nose points toward local -Z, up is local +Y.
-    mig21Root.rotation.y = Math.PI;
+    // 3. Orientation (Task 20 Item 2):
+    // Yaw closer to 135° (was Math.PI / 180° dead away from camera) so cockpit & plan face camera
+    mig21Root.rotation.y = THREE.MathUtils.degToRad(135);
 
     // 4. Uniform scale to exact 16.0 world units wingspan
     const normBox = new THREE.Box3().setFromObject(mig21Root);
@@ -896,16 +1064,13 @@
     mig21Group.add(mig21Root);
     mig21Group.scale.setScalar(scaleFactor);
 
-    // 5. Placement: unchanged from existing Beat 5 setup
+    // 5. Placement: Beat 5 coordinates (12, 12, -495), rotation 230° Y and 15° Z roll
     mig21Group.position.set(12, 12, -495);
     mig21Group.rotation.set(0, THREE.MathUtils.degToRad(230), THREE.MathUtils.degToRad(15));
 
     scene.add(mig21Group);
 
-    console.log("[MiG-21 Bison] Old procedural jet meshes removed completely.");
-    console.log(`[MiG-21 Bison] Identified length axis: Z (raw size [${rawSize.x.toFixed(2)}, ${rawSize.y.toFixed(2)}, ${rawSize.z.toFixed(2)}]).`);
-    console.log(`[MiG-21 Bison] Applied rotation.y = 180° (nose -> -Z, up -> +Y) and uniform scale ${scaleFactor.toFixed(5)} -> wingspan ${targetWingspan} units.`);
-    console.log("[MiG-21 Bison] Placed at Beat 5 coordinates (12, 12, -495) with 230° Y yaw and 15° Z roll.");
+    console.log(`[MiG-21 Bison] Loaded authored PBR materials (${mig21AuthoredMaterials.length} materials). Applied rotation.y = 135° (facing camera), scale ${scaleFactor.toFixed(5)} -> wingspan ${targetWingspan} units.`);
 
     window.fighterReady = true;
     window.fighterJet = mig21Group;
@@ -914,10 +1079,14 @@
   });
 
   // --------------------------------------------------------------------------
-  // Task 9: Beat 6 Formation Escorts (F-16C Falcon & MiG-35)
+  // Task 9 & Task 20: Beat 6 Formation Escorts (F-16C Falcon & MiG-35)
+  // Keep authored PBR materials & textures. Add EdgesGeometry(28) in #FF8A3D.
+  // Converging yaws toward the viewer.
   // --------------------------------------------------------------------------
-  let f16BodyMaterial = null;
-  let mig35BodyMaterial = null;
+  const f16AuthoredMaterials = [];
+  const mig35AuthoredMaterials = [];
+  window.f16AuthoredMaterials = f16AuthoredMaterials;
+  window.mig35AuthoredMaterials = mig35AuthoredMaterials;
   window.f16Ready = false;
   window.mig35Ready = false;
 
@@ -925,13 +1094,6 @@
   gltfLoader.load('models/f16/scene.gltf', (gltf) => {
     const f16Root = gltf.scene;
 
-    f16BodyMaterial = new THREE.MeshStandardMaterial({
-      color: 0x05060B,
-      roughness: 0.6,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.0
-    });
     const edgeMat = new THREE.LineBasicMaterial({
       color: 0xFF8A3D,
       linewidth: 1.5
@@ -939,7 +1101,19 @@
 
     f16Root.traverse((child) => {
       if (child.isMesh) {
-        child.material = f16BodyMaterial;
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(m => {
+              m.transparent = true;
+              m.opacity = 0.0;
+              f16AuthoredMaterials.push(m);
+            });
+          } else {
+            child.material.transparent = true;
+            child.material.opacity = 0.0;
+            f16AuthoredMaterials.push(child.material);
+          }
+        }
         try {
           const edgesGeom = new THREE.EdgesGeometry(child.geometry, 28);
           const edges = new THREE.LineSegments(edgesGeom, edgeMat);
@@ -963,28 +1137,22 @@
     const scaleFactor = 17.0 / normSize.x;
     f16Group.scale.setScalar(scaleFactor);
 
-    // Placement: (18, 10, -665), roll -15° about Z (banking outward, right), nose toward -Z
+    // Placement & Orientation (Task 20 Item 2):
+    // Position (18, 10, -665). Yaw -15° inward toward center, roll -15° about Z (banking right):
     f16Group.position.set(18, 10, -665);
-    f16Group.rotation.set(0, 0, THREE.MathUtils.degToRad(-15));
+    f16Group.rotation.set(0, THREE.MathUtils.degToRad(-15), THREE.MathUtils.degToRad(-15));
 
     scene.add(f16Group);
     window.f16Escort = f16Group;
     window.f16Ready = true;
 
-    console.log('%c[Formation Escorts] F-16: length axis identified as Z (nose: -Z, up: +Y). Scaled to 17 units wingspan. Original textures/materials discarded and never loaded.', 'color: #FF8A3D;');
+    console.log('%c[Formation Escorts] F-16: Authored PBR materials preserved (plane, glass, seat, pilot). Converging yaw -15° applied.', 'color: #FF8A3D;');
   });
 
   // 2. MiG-35 (bohmerang, CC-BY-NC-SA-4.0)
   gltfLoader.load('models/mig35/scene.gltf', (gltf) => {
     const migRoot = gltf.scene;
 
-    mig35BodyMaterial = new THREE.MeshStandardMaterial({
-      color: 0x05060B,
-      roughness: 0.6,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.0
-    });
     const edgeMat = new THREE.LineBasicMaterial({
       color: 0xFF8A3D,
       linewidth: 1.5
@@ -992,7 +1160,19 @@
 
     migRoot.traverse((child) => {
       if (child.isMesh) {
-        child.material = mig35BodyMaterial;
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(m => {
+              m.transparent = true;
+              m.opacity = 0.0;
+              mig35AuthoredMaterials.push(m);
+            });
+          } else {
+            child.material.transparent = true;
+            child.material.opacity = 0.0;
+            mig35AuthoredMaterials.push(child.material);
+          }
+        }
         try {
           const edgesGeom = new THREE.EdgesGeometry(child.geometry, 28);
           const edges = new THREE.LineSegments(edgesGeom, edgeMat);
@@ -1020,15 +1200,16 @@
     const scaleFactor = 20.0 / normSize.x;
     migGroup.scale.setScalar(scaleFactor);
 
-    // Placement: (-18, 10, -665), roll 15° about Z (banking outward, left), nose toward -Z
+    // Placement & Orientation (Task 20 Item 2):
+    // Position (-18, 10, -665). Yaw +15° inward toward center, roll +15° about Z (banking left):
     migGroup.position.set(-18, 10, -665);
-    migGroup.rotation.set(0, 0, THREE.MathUtils.degToRad(15));
+    migGroup.rotation.set(0, THREE.MathUtils.degToRad(15), THREE.MathUtils.degToRad(15));
 
     scene.add(migGroup);
     window.mig35Escort = migGroup;
     window.mig35Ready = true;
 
-    console.log('%c[Formation Escorts] MiG-35: length axis identified as X (nose: +X rotated +90° around Y to -Z, up: +Y). Scaled to 20 units wingspan. Original textures/materials discarded and never loaded.', 'color: #FF8A3D;');
+    console.log('%c[Formation Escorts] MiG-35: Authored PBR materials preserved. Converging yaw +15° applied.', 'color: #FF8A3D;');
   });
 
   // --------------------------------------------------------------------------
@@ -1225,11 +1406,21 @@
     scrub: true,
     onUpdate: (self) => {
       targetProgress = self.progress;
+      if (self.progress >= 0.999 && !handoffTriggered) {
+        triggerBeat8Handoff();
+      }
     },
     onLeave: () => {
       triggerBeat8Handoff();
     }
   });
+
+  // Additional wheel/touch fallback at the bottom of the page
+  window.addEventListener('wheel', (e) => {
+    if (currentProgress >= 0.99 && e.deltaY > 0) {
+      triggerBeat8Handoff();
+    }
+  }, { passive: true });
 
   // --------------------------------------------------------------------------
   // 7. Motion Interpolation & FOV
@@ -1303,9 +1494,9 @@
     } else if (p > 0.5893) {
       fighterOpacity = (p - 0.5893) / (0.6443 - 0.5893);
     }
-    if (fighterBodyMaterial) {
-      fighterBodyMaterial.opacity = fighterOpacity;
-    }
+    mig21AuthoredMaterials.forEach(m => {
+      m.opacity = fighterOpacity;
+    });
 
     // Formation Escorts: F-16 & MiG-35 (Beat 6)
     let escortOpacity = 0.0;
@@ -1314,12 +1505,12 @@
     } else if (p > 0.7543) {
       escortOpacity = (p - 0.7543) / (0.8045 - 0.7543);
     }
-    if (f16BodyMaterial) {
-      f16BodyMaterial.opacity = escortOpacity;
-    }
-    if (mig35BodyMaterial) {
-      mig35BodyMaterial.opacity = escortOpacity;
-    }
+    f16AuthoredMaterials.forEach(m => {
+      m.opacity = escortOpacity;
+    });
+    mig35AuthoredMaterials.forEach(m => {
+      m.opacity = escortOpacity;
+    });
   }
 
   // --------------------------------------------------------------------------
@@ -1425,9 +1616,13 @@
         if (b.visible !== showBoxes) b.visible = showBoxes;
       }
     }
+    if (window.beat7_8_photo && window.beat7_8_photo.visible !== showBoxes) {
+      window.beat7_8_photo.visible = showBoxes;
+    }
 
     updateAircraftOpacities(clampedProgress);
     updateBeat1Caption(clampedProgress);
+    updateAircraftCaptions(clampedProgress, camOverride);
     updateStarfieldOpacity(clampedProgress);
     updateBeat2Warp(clampedProgress);
     updateBeat3Environment(clampedProgress);
@@ -1552,9 +1747,9 @@
   window.getAircraftOpacities = function () {
     return {
       b2Opacity: b2BodyMaterial ? b2BodyMaterial.opacity : null,
-      fighterOpacity: fighterBodyMaterial ? fighterBodyMaterial.opacity : null,
-      f16Opacity: f16BodyMaterial ? f16BodyMaterial.opacity : null,
-      mig35Opacity: mig35BodyMaterial ? mig35BodyMaterial.opacity : null
+      fighterOpacity: mig21AuthoredMaterials.length > 0 ? mig21AuthoredMaterials[0].opacity : null,
+      f16Opacity: f16AuthoredMaterials.length > 0 ? f16AuthoredMaterials[0].opacity : null,
+      mig35Opacity: mig35AuthoredMaterials.length > 0 ? mig35AuthoredMaterials[0].opacity : null
     };
   };
 
