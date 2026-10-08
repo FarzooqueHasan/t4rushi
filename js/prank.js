@@ -85,10 +85,8 @@
   let activeSticker = '🎂';
 
   const DEFAULT_WISHES = [
-    { name: 'Shreya ✨', msg: 'Happy Birthday Queen!! Keep shining brighter than a supernova! 💖', sticker: '🎂' },
-    { name: 'Aryan 🚀', msg: 'To the coolest pilot in AEROSS, have the happiest 20th! Keep soaring high! ✈️', sticker: '🚀' },
-    { name: 'Ria 🌸', msg: 'Happy happy birthday Tarushi!! May this year bring endless adventures! ♡', sticker: '✨' },
-    { name: 'Kabir 🏀', msg: 'Court MVP and sweetest friend ever! Happy birthday Tarushi! 🏀🎉', sticker: '🧸' }
+    { name: 'Farzooque 🚀', msg: 'Happy Birthday φ (Golden Ration, Wave Function sab ho aap)', sticker: '🚀' },
+    { name: 'BlueWarrior 🌸', msg: 'May you be able to fly with ur degree, And get a lot of XP, Happy bday to you and may ur life be filled with glee And you shall conquer any problem and get victory, sticker: '✨' },
   ];
 
   function getSavedWishes() {
@@ -165,7 +163,7 @@
       wishes.unshift({ name, msg, sticker: activeSticker });
       try {
         localStorage.setItem('tarushi_guestbook_wishes', JSON.stringify(wishes));
-      } catch (_) {}
+      } catch (_) { }
 
       renderGuestbookEntries();
       guestbookMsg.value = '';
@@ -373,7 +371,7 @@
 
   function onPointerDown(e) {
     if (hasCompleted) return;
-    try { holdBtn.setPointerCapture(e.pointerId); } catch (_) {}
+    try { holdBtn.setPointerCapture(e.pointerId); } catch (_) { }
     isHolding = true;
     holdStartTime = performance.now() - (currentProgress * HOLD_DURATION);
     cancelAnimationFrame(rafId);
@@ -382,7 +380,7 @@
 
   function onPointerUp(e) {
     if (!isHolding || hasCompleted) return;
-    try { holdBtn.releasePointerCapture(e.pointerId); } catch (_) {}
+    try { holdBtn.releasePointerCapture(e.pointerId); } catch (_) { }
     isHolding = false;
     releaseStartTime = performance.now();
     releaseStartProgress = currentProgress;
@@ -582,7 +580,7 @@
       setTimeout(() => {
         // Step 4: Burn/dissolve (800ms) plays over whole desaturated layer
         if (prankContent) prankContent.classList.add('hidden');
-        
+
         playBurn(() => {
           // Step 5: On completion, remove the Prank layer from the DOM entirely
           prankLayer.remove();
